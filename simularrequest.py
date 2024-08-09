@@ -1,4 +1,5 @@
 import requests
+import socketio
 
 dados_package = {
   "id": "0",
@@ -21,7 +22,7 @@ dados_package = {
   "long": "0",
   "lat": "0",
   "press_ar": "0.9970984455958549",
-  "altitude": "24.5",
+  "altitude": "6969",
 }
 
 contador = {
@@ -33,12 +34,31 @@ contador = {
 #
 # Enviar para Mongo
 # NAO ESQUECER DE ACRESCENTAR O ID NO DICIONARIO
+
+sio = socketio.Client()
+@sio.event
+def connect():
+    print("CONECTEI")
+    my_message('a')
+
+@sio.event
+def my_message(data):
+    print('message received with ', data)
+    res = requests.post('http://localhost:3001/button_pressed', json=contador)
+    print(res.text)
+    sio.emit('foo', dados_package)
+
+sio.connect("http://127.0.0.1:3001")
+sio.wait()
+#
 res = requests.post('http://localhost:3001/button_pressed', json=contador)
 print(res.text)
 
-res = requests.post('http://localhost:3001/enviar', json=dados_package)
-print(res.text)
-#
+print("fim")
+
+# res = requests.post('http://localhost:3001/enviar', json=dados_package)
+# print(res.text)
+# #
 # # Receber todos do Mongo
 # dados_all = requests.get('http://localhost:3000/receber')
 # print(dados_all.json())
