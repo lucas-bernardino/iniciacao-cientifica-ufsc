@@ -4,6 +4,8 @@ const app = express();
 const mongoose = require("mongoose");
 const { Sensor, sensorSchema } = require("./models/sensorModel");
 require('dotenv').config()
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
 app.use(express.json());
 app.use(cors());
@@ -11,6 +13,15 @@ app.use(cors());
 let SensorModel;
 
 let ip;
+
+io.on('connection', (socket) => {
+
+  socket.on("message", async (data) => {
+    create_sensor = await SensorModel.create(data);
+    console.log("apos criar um novo dado");
+  })
+
+});
 
 // This route is responsible for testing if the server is on.
 app.get("/teste", async (req, res) => {
@@ -154,9 +165,10 @@ mongoose
   )
   .then(() => {
     console.log("Conectado ao MongoDB.");
-    app.listen(3001, "0.0.0.0", () => {
+    server.listen(3001, "127.0.0.1", () => {
       console.log("Listening to port:  " + 3001);
     });
+
   })
   .catch((error) => {
     console.log(error);
