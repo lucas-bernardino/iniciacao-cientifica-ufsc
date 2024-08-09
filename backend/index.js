@@ -16,9 +16,18 @@ let ip;
 
 io.on('connection', (socket) => {
 
-  socket.on("message", async (data) => {
+  console.log("Someone just connected on sockets. ID: ", socket.id);
+
+  socket.on("send", async (data) => {
     create_sensor = await SensorModel.create(data);
     console.log("apos criar um novo dado");
+  })
+
+  socket.on("receive", async (data) => {
+    console.log("Someone's trying to receive the data.");
+    const sensor_ultimo = await SensorModel.find().sort({ id: -1 }).limit(1);
+    socket.emit("receive", sensor_ultimo);
+    console.log("I have just send the data.");
   })
 
 });
