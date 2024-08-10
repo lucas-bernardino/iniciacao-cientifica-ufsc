@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./Grafico.css";
 
 import { MdOutlineToggleOff } from "react-icons/md";
 import { MdOutlineToggleOn } from "react-icons/md";
 import ChartTeste from "./ChartTeste";
+
+
+import { io } from 'socket.io-client';
 
 interface Choice {
   velocidade: boolean;
@@ -19,21 +22,18 @@ interface GraficoProps {
 }
 
 function Grafico({ flagShow }: GraficoProps) {
-  const [sensorData, setSensorData] = useState();
-  async function fetchData() {
-    const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/receber_ultimo", {headers: {'ngrok-skip-browser-warning': 'true'}});
-    const data = await response.json();
-    setSensorData(data);
-  }
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      fetchData();
-    }, 100);
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
+  let url: string = import.meta.env.VITE_BACKEND_URL;
+  url = url.replace("http", "ws"); // Change this to HTTPS if not in localhost
+
+  const socket = io(url);
+
+  const [sensorData, setSensorData] = useState<any>();
+
+  socket.on("send", (response: string) => {
+    console.log("Response on line 41", response[0]);
+    setSensorData(response[0]);
+  });
 
   const [enumChoice, setEnumChoice] = useState<Choice>({
     velocidade: false,
