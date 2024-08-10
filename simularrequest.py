@@ -3,10 +3,10 @@ import requests
 import socketio
 
 dados_package = {
-  "id": "0",
-  "acel_x": "0",
-  "acel_y": "0",
-  "acel_z": "0",
+  "id": 0,
+  "acel_x": 0,
+  "acel_y": 0,
+  "acel_z": 0,
   "vel_x": "100",
   "vel_y": "100",
   "vel_z": "100",
@@ -49,11 +49,14 @@ res = requests.post('http://localhost:3001/button_pressed', json=contador)
 
 def send_data_package():
     sio.emit("send", dados_package)
-    print("Mandei os dados com sucesso")
+    dados_package["id"]+=1
+    dados_package["acel_x"]+=1
+    dados_package["acel_y"]+=1
+    dados_package["acel_z"]+=1
 
 while True:
     send_data_package()
-    sleep(1)
+    sleep(0.01)
 
 # res = requests.post('http://localhost:3001/enviar', json=dados_package)
 # print(res.text)
