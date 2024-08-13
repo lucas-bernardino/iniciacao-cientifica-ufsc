@@ -1,59 +1,77 @@
-use std::process::Stdio;
-
+use dotenv::dotenv;
 use lettre::{
     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
     SmtpTransport, Transport,
 };
-use tokio::io::{AsyncBufReadExt, BufReader};
+use std::process::{exit, Command, Stdio};
 
-#[tokio::main]
-async fn main() {
-    //Nesse arquivo:
-    //TODO: Criar servidor no localhostrun.
-    //TODO: Mandar URL pro email
-    //TODO: Ficar dentro de um loop verificando se essa url ainda é valida
-    //TODO: Caso não for, começa o loop tudo de novo.
+const BACKEND_ENV_PATH: &str = "../backend/.env";
+const VITE_ENV_PATH: &str = "../frontend/vite-project/.env";
 
-    //Em outro arquivo (ou separar em outras funções)
-    //TODO: Precisa atualizar o .env do backend, flask e frontend.
-}
-
-async fn start_server() -> Result<String, Box<dyn std::error::Error + 'static>> {
-    let init_command = tokio::process::Command::new("ssh")
-        .args(["-R", "80:localhost:3000", "ssh.localhost.run"])
-        .stdout(Stdio::piped())
-        .spawn();
-
-    let stdout = init_command?.stdout.take();
-
-    let mut reader = match stdout {
-        Some(s) => BufReader::new(s).lines(),
-        None => return Err("Could not get stdout".into()),
-    };
-
-    let mut url = String::new();
-
-    while let Some(line) = reader.next_line().await.unwrap() {
-        if line.contains("https") {
-            let remove_trash = line.trim().replace(" ", "");
-            let vec_url = remove_trash.split(",").collect::<Vec<_>>();
-            url = vec_url.get(1).unwrap().to_string();
-            break;
+fn main() {
+    dotenv().ok();
+    let url = match get_url() {
+        Ok(url) => url,
+        Err(e) => {
+            println!("ERROR: Could not get url from zrok overview:\n{e}");
+            exit(1);
         }
+    };
+    println!("URL: {url}");
+    match send_email(&url) {
+        Ok(_) => println!("Successfuly send email"),
+        Err(e) => println!("ERROR: Could not send email:\n{e}"),
+    };
+    match change_url_backend_env("katiau") {
+        Ok(_) => println!("Successfully change url in backend .env"),
+        Err(e) => println!("ERROR: Could not change url in backend .env:\n{e}"),
     }
-
-    Ok(url)
+    match change_url_frontend_env("vrum", "bibi") {
+        Ok(_) => println!("Successfully change url in frontend .env"),
+        Err(e) => println!("ERROR: Could not change url in frontend .env:\n{e}"),
+    }
 }
 
-async fn send_email(url: &String) -> Result<(), Box<dyn std::error::Error + 'static>> {
+fn get_url() -> Result<String, Box<dyn std::error::Error + 'static>> {
+    let zrok_release = Command::new("zrok")
+        .arg("overview")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn zrok overview")
+        .wait_with_output()
+        .expect("Failed to get output from zrok overview");
+
+    let output = std::str::from_utf8(&zrok_release.stdout)
+        .expect("Problem occurred when getting zrok release output")
+        .replace(r"\", "");
+
+    let output_json: serde_json::Value = serde_json::from_str(output.as_str()).unwrap();
+
+    let mut sorted_by_creation = output_json["environments"][2]["shares"]
+        .as_array()
+        .expect("Failed to get array out of urls")
+        .clone();
+    sorted_by_creation.sort_by_key(|key| key["createdAt"].as_i64());
+
+    let latest_url = sorted_by_creation
+        .last()
+        .expect("Failed to get last element in array")["frontendEndpoint"]
+        .clone();
+
+    Ok(latest_url.to_string())
+}
+
+fn send_email(url: &String) -> Result<(), Box<dyn std::error::Error + 'static>> {
     let email = Message::builder()
-        .from("microfoneprojeto@gmail.com".parse()?)
-        .to("microfoneprojeto@gmail.com".parse()?)
+        .from("projetomotobmw@gmail.com".parse()?)
+        .to("projetomotobmw@gmail.com".parse()?)
         .subject("API")
         .header(ContentType::TEXT_PLAIN)
         .body(url.clone())?;
 
-    let password = std::env::var("GMAIL_PASSWORD")?.replace("_", " ");
+    let password = std::env::var("GMAIL_PASSWORD")
+        .expect("Missing GMAIL_PASSWORD in .env file!")
+        .replace("_", " ");
 
     let creds = Credentials::new("microfoneprojeto@gmail.com".to_owned(), password.to_owned());
 
@@ -70,18 +88,22 @@ async fn send_email(url: &String) -> Result<(), Box<dyn std::error::Error + 'sta
     Ok(())
 }
 
-async fn init_server_email() -> Result<String, Box<dyn std::error::Error + 'static>> {
-    let url = match start_server().await {
-        Ok(u) => u,
-        Err(e) => {
-            return Err(format!(
-                "Could not send email due to an error in starting the server\nError: {}",
-                e.to_string()
-            )
-            .into())
-        }
-    };
+fn change_url_backend_env(backend_url: &str) -> Result<(), Box<dyn std::error::Error + 'static>> {
+    let mut old_info_backend = std::fs::read_to_string(BACKEND_ENV_PATH)?;
+    let offset = old_info_backend.rfind('=').unwrap();
+    old_info_backend.replace_range(offset.., format!("={val}", val = backend_url).as_str());
+    std::fs::write(BACKEND_ENV_PATH, &old_info_backend)?;
+    Ok(())
+}
 
-    send_email(&url).await.unwrap();
-    Ok(url)
+fn change_url_frontend_env(
+    backend_url: &str,
+    flask_url: &str,
+) -> Result<(), Box<dyn std::error::Error + 'static>> {
+    let string_on_vite_env = format!(
+        "VITE_BACKEND_URL={}\nVITE_FLASK_URL={}",
+        backend_url, flask_url
+    );
+    std::fs::write(VITE_ENV_PATH, &string_on_vite_env)?;
+    Ok(())
 }
