@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lavisualizar/chart.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -27,7 +28,7 @@ class _HomeState extends State<Home> {
               NavigationRailDestination(
                 icon: Icon(Icons.poll_outlined),
                 selectedIcon: Icon(Icons.poll),
-                label: Text("Gráficos")
+                label: Text("Gráficos"),
               ),
               NavigationRailDestination(
                   icon: Icon(Icons.settings_applications_outlined),
@@ -35,9 +36,18 @@ class _HomeState extends State<Home> {
                   label: Text("Configurações")
               )
             ],
-          selectedIndex: _selectedIndex
+          selectedIndex: _selectedIndex,
           ),
           const VerticalDivider(thickness: 1, width: 1),
+          Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: const [
+                  Chart(),
+                  Text("CONFIGURACOES")
+                ],
+              )
+          )
         ],
       ),
     );
