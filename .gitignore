@@ -2,3 +2,10 @@ rust-script/target
 
 url/target
 url/.env
+lavisualizar/android
+lavisualizar/ios
+lavisualizar/linux
+lavisualizar/macos
+lavisualizar/build
+lavisualizar/windows
+lavisualizar/web
