@@ -18,7 +18,8 @@ class _HomeState extends State<Home> {
       body: Row(
         children: [
           NavigationRail(
-              onDestinationSelected: (int index) {
+            backgroundColor: const Color(0xEE000000),
+            onDestinationSelected: (int index) {
                 setState(() {
                   _selectedIndex = index;
                 });
@@ -28,12 +29,12 @@ class _HomeState extends State<Home> {
               NavigationRailDestination(
                 icon: Icon(Icons.poll_outlined),
                 selectedIcon: Icon(Icons.poll),
-                label: Text("Gráficos"),
+                label: Text("Gráficos", style: TextStyle(color: Colors.white),),
               ),
               NavigationRailDestination(
                   icon: Icon(Icons.settings_applications_outlined),
                   selectedIcon: Icon(Icons.settings_applications, ),
-                  label: Text("Configurações")
+                  label: Text("Configurações", style: TextStyle(color: Colors.white),)
               )
             ],
           selectedIndex: _selectedIndex,
