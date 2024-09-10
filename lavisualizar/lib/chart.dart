@@ -43,6 +43,9 @@ class Chart extends StatefulWidget {
 class _ChartState extends State<Chart> {
 
   bool _shouldDisplayFutureBuilder = false;
+  bool _shouldDisplayInfoCard = false;
+  double maxValue = 0;
+  double avgValue = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -50,38 +53,11 @@ class _ChartState extends State<Chart> {
       backgroundColor: Colors.black87,
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 40.0),
-                child: Card(
-                  elevation: 20,
-                  color: Colors.orange[500],
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        Column(
-                          children: [
-                            Text("VELOCIDADE MÁXIMA"),
-                            Text("23 km/h"),
-                          ],
-                        ),
-                        SizedBox(height: 15,),
-                        Column(
-                          children: [
-                            Text("VELOCIDADE MÉDIA"),
-                            Text("12 km/h")
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 15.0),
+                padding: EdgeInsets.only(right: 15.0),
                 child: Image(image: AssetImage('images/lav-logo.png'), height: 250, width: 250,),
               ),
             ],
@@ -173,54 +149,83 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData) {
     }
   };
 
-  print("max: ${maxYAxis}, min: ${minYAxis}");
-
-  return SfCartesianChart(
-    title: const ChartTitle(
-      text: "Velocidade GPS em função do tempo",
-      textStyle: TextStyle(
-        color: Colors.white,
-        fontSize: 14,
+  return Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 40.0),
+        child: Card(
+          elevation: 20,
+          color: Colors.orange[500],
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Column(
+                  children: [
+                    Text("VELOCIDADE MÁXIMA"),
+                    Text("23 km/h"),
+                  ],
+                ),
+                SizedBox(height: 15,),
+                Column(
+                  children: [
+                    Text("VELOCIDADE MÉDIA"),
+                    Text("12 km/h")
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-    ),
-    enableAxisAnimation: true,
-    tooltipBehavior: TooltipBehavior(
-      color: Colors.lightBlue.shade400,
-      enable: true,
-      borderColor: Colors.deepOrange,
-      borderWidth: 2,
-      header: "",
-    ),
-    zoomPanBehavior: ZoomPanBehavior(
-      enablePanning: true,
-      enableMouseWheelZooming: true,
-      enablePinching: true,
-    ),
-    primaryXAxis: const DateTimeCategoryAxis(
-        labelStyle: TextStyle(
+      SfCartesianChart(
+        title: const ChartTitle(
+          text: "Velocidade GPS em função do tempo",
+          textStyle: TextStyle(
             color: Colors.white,
             fontSize: 14,
-            fontWeight: FontWeight.w500
+          ),
         ),
-      title: AxisTitle(text: "Horário"),
-    ),
-    primaryYAxis: NumericAxis(
-        labelStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500
+        enableAxisAnimation: true,
+        tooltipBehavior: TooltipBehavior(
+          color: Colors.deepOrange,
+          enable: true,
+          borderColor: Colors.deepOrange,
+          borderWidth: 2,
+          header: "",
         ),
-        minimum: (minYAxis - 3).roundToDouble(),
-        maximum: (maxYAxis + 3).roundToDouble(),
-        title: const AxisTitle(text: "km/h"),
-  ),
-    series: <FastLineSeries<DataPoints, DateTime>>[
-      // Initialize line series with data points
-      FastLineSeries <DataPoints, DateTime>(
-        color: Colors.lightBlue,
-        dataSource: _dataPoints,
-        xValueMapper: (DataPoints value, _) => value.x,
-        yValueMapper: (DataPoints value, _) => value.y,
+        zoomPanBehavior: ZoomPanBehavior(
+          enablePanning: true,
+          enableMouseWheelZooming: true,
+          enablePinching: true,
+        ),
+        primaryXAxis: const DateTimeCategoryAxis(
+            labelStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500
+            ),
+          title: AxisTitle(text: "Horário"),
+        ),
+        primaryYAxis: NumericAxis(
+            labelStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500
+            ),
+            minimum: (minYAxis - 3).roundToDouble(),
+            maximum: (maxYAxis + 3).roundToDouble(),
+            title: const AxisTitle(text: "km/h"),
+      ),
+        series: <FastLineSeries<DataPoints, DateTime>>[
+          // Initialize line series with data points
+          FastLineSeries <DataPoints, DateTime>(
+            color: Colors.orange[500],
+            dataSource: _dataPoints,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+        ],
       ),
     ],
   );
