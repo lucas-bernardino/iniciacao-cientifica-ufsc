@@ -128,6 +128,8 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData) {
 
   double maxYAxis = csvData[value_column][1] as double;
   double minYAxis = csvData[value_column][1] as double;
+  int csvLength = 0;
+  double totalSum = 0;
 
   for (var item in csvData.skip(1)) {
     try {
@@ -144,10 +146,14 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData) {
       int miliseconds = int.parse(rawDateTime.substring(9, 11));
       DateTime dateTime = DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
       _dataPoints.add(DataPoints(dateTime, item[value_column]));
+      totalSum += item[value_column] as double;
+      csvLength += 1;
     } catch (e) {
       print("DEU ERRO");
     }
   };
+
+  double avgValue = totalSum / csvLength;
 
   return Column(
     children: [
@@ -156,21 +162,21 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData) {
         child: Card(
           elevation: 20,
           color: Colors.orange[500],
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.all(8.0),
             child: Column(
               children: [
                 Column(
                   children: [
                     Text("VELOCIDADE MÁXIMA"),
-                    Text("23 km/h"),
+                    Text("${maxYAxis.toStringAsFixed(2)} km/h"),
                   ],
                 ),
                 SizedBox(height: 15,),
                 Column(
                   children: [
                     Text("VELOCIDADE MÉDIA"),
-                    Text("12 km/h")
+                    Text("${avgValue.toStringAsFixed(2)} km/h")
                   ],
                 ),
               ],
