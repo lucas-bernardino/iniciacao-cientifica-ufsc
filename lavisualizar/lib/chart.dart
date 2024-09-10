@@ -43,9 +43,10 @@ class Chart extends StatefulWidget {
 class _ChartState extends State<Chart> {
 
   bool _shouldDisplayFutureBuilder = false;
-  bool _shouldDisplayInfoCard = false;
+  bool _shouldDisplayOptions = false;
   double maxValue = 0;
   double avgValue = 0;
+  int chartColumnOption = 17;
 
   @override
   Widget build(BuildContext context) {
@@ -71,30 +72,90 @@ class _ChartState extends State<Chart> {
                   future: processCsv(),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      return buildChart(context, snapshot.data!);
+                      return buildChart(context, snapshot.data!, chartColumnOption);
                     } else {
                       return CircularProgressIndicator();
                     }
                   }
                 ) : const SizedBox(),
                 SizedBox(height: 20,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MaterialButton(
+                        elevation: 20,
+                        padding: EdgeInsets.all(17),
+                        color: Colors.grey,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(15))
+                        ),
+                        child: Text("Adicionar Arquivos"),
+                        onPressed: () {
+                          setState(() {
+                            _shouldDisplayFutureBuilder = !_shouldDisplayFutureBuilder;
+                          });
+                        }
+                    ),
+                    SizedBox(width: 10,),
+                  ],
+                ),
                 MaterialButton(
                     elevation: 20,
                     padding: EdgeInsets.all(17),
                     color: Colors.grey,
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(15))
+                        borderRadius: BorderRadius.all(Radius.circular(15))
                     ),
-                    child: Text("Adicionar Arquivos"),
+                    child: Text("Escolher Dado"),
                     onPressed: () {
                       setState(() {
-                        _shouldDisplayFutureBuilder = !_shouldDisplayFutureBuilder;
+                        _shouldDisplayFutureBuilder = false;
+                        _shouldDisplayOptions = true;
                       });
                     }
                 ),
               ],
             ),
           ),
+          _shouldDisplayOptions ? Card(
+            elevation: 20,
+            child: Column(
+              children: [
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 1;
+                      });
+                    },
+                    child: Text("Aceleracao")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 17;
+                      });
+                    },
+                    child: Text("Velocidade")
+                ),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 16;
+                      });
+                    },
+                    child: Text("Latitude/Longitude")
+                ),
+                IconButton(
+                    onPressed:() => setState(() {
+                      _shouldDisplayFutureBuilder = true;
+                      _shouldDisplayOptions = false;
+                    }),
+                    icon: Icon(Icons.check),
+                )
+              ],
+            ),
+          ) : SizedBox()
         ],
       ),
 
@@ -119,12 +180,12 @@ Future<List<List<dynamic>>> processCsv() async {
   return csvList;
 }
 
-Widget buildChart(BuildContext context, List<List<dynamic>> csvData) {
+Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_column) {
 
   List<DataPoints> _dataPoints = [];
 
   var time_column = COLUMNS.HOUR.index;
-  var value_column = COLUMNS.VEL_GPS.index;
+  //var value_column = COLUMNS.VEL_GPS.index;
 
   double maxYAxis = csvData[value_column][1] as double;
   double minYAxis = csvData[value_column][1] as double;
