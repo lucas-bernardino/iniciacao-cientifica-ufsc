@@ -48,38 +48,78 @@ class _ChartState extends State<Chart> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black87,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Image(image: AssetImage('images/lav-logo.png'), height: 300, width: 300,),
-            _shouldDisplayFutureBuilder ? FutureBuilder(
-              future: processCsv(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return buildChart(context, snapshot.data!);
-                } else {
-                  return CircularProgressIndicator();
-                }
-              }
-            ) : const SizedBox(),
-            SizedBox(height: 20,),
-            MaterialButton(
-                padding: EdgeInsets.all(17),
-                color: Colors.grey,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(15))
+      body: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 40.0),
+                child: Card(
+                  elevation: 20,
+                  color: Colors.orange[500],
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Column(
+                          children: [
+                            Text("VELOCIDADE MÁXIMA"),
+                            Text("23 km/h"),
+                          ],
+                        ),
+                        SizedBox(height: 15,),
+                        Column(
+                          children: [
+                            Text("VELOCIDADE MÉDIA"),
+                            Text("12 km/h")
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Text("Adicionar Arquivos"),
-                onPressed: () {
-                  setState(() {
-                    _shouldDisplayFutureBuilder = !_shouldDisplayFutureBuilder;
-                  });
-                }
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 15.0),
+                child: Image(image: AssetImage('images/lav-logo.png'), height: 250, width: 250,),
+              ),
+            ],
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _shouldDisplayFutureBuilder ? FutureBuilder(
+                  future: processCsv(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return buildChart(context, snapshot.data!);
+                    } else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+                ) : const SizedBox(),
+                SizedBox(height: 20,),
+                MaterialButton(
+                    elevation: 20,
+                    padding: EdgeInsets.all(17),
+                    color: Colors.grey,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15))
+                    ),
+                    child: Text("Adicionar Arquivos"),
+                    onPressed: () {
+                      setState(() {
+                        _shouldDisplayFutureBuilder = !_shouldDisplayFutureBuilder;
+                      });
+                    }
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
 
     );
