@@ -32,6 +32,16 @@ enum COLUMNS{
   VEL_HALL
 }
 
+List<List<String>> CARD_INFO = [
+  ["ACELERAÇÃO MÁXIMA", "ACELERAÇÃO MÉDIA", "ACELERACAO MÍNIMA", "m/s²"],
+  ["VELOCIDADE MÁXIMA", "VELOCIDADE MÉDIA", "VELOCIDADE MÍNIMO", "km/h"],
+  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "rad"],
+  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "rad"],
+  ["YALL MÁXIMO", "YALL MÉDIO", "YALL MÍNIMO", "rad"],
+  ["ESTERÇAMENTO MÁXIMO", "ESTERÇAMENTO MÉDIO", "ESTERÇAMENTO MÍNIMO", "deg"],
+  ["LATITUDE", "LONGITUDE", "", ""]
+];
+
 
 class Chart extends StatefulWidget {
   const Chart({super.key});
@@ -124,10 +134,28 @@ class _ChartState extends State<Chart> {
                 ElevatedButton(
                     onPressed: () {
                       setState(() {
+                        chartColumnOption = 0;
+                      });
+                    },
+                    child: Text("Aceleracao X")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
                         chartColumnOption = 1;
                       });
                     },
-                    child: Text("Aceleracao")
+                    child: Text("Aceleracao Y")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 2;
+                      });
+                    },
+                    child: Text("Aceleracao Z")
                 ),
                 SizedBox(height: 10,),
                 ElevatedButton(
@@ -138,6 +166,7 @@ class _ChartState extends State<Chart> {
                     },
                     child: Text("Velocidade")
                 ),
+                SizedBox(height: 10,),
                 ElevatedButton(
                     onPressed: () {
                       setState(() {
@@ -146,6 +175,7 @@ class _ChartState extends State<Chart> {
                     },
                     child: Text("Latitude/Longitude")
                 ),
+                SizedBox(height: 10,),
                 ElevatedButton(
                     onPressed: () {
                       setState(() {
@@ -195,10 +225,12 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
 
   var time_column = COLUMNS.HOUR.index;
 
-  double maxYAxis = csvData[value_column][1] as double;
-  double minYAxis = csvData[value_column][1] as double;
+  double maxYAxis = csvData[1][value_column] as double;
+  double minYAxis = csvData[1][value_column] as double;
   int csvLength = 0;
   double totalSum = 0;
+
+  List<String> chartInfo = getInfoCard(value_column);
 
   for (var item in csvData.skip(1)) {
     try {
@@ -243,15 +275,22 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
               children: [
                 Column(
                   children: [
-                    Text("VELOCIDADE MÁXIMA"),
-                    Text("${maxYAxis.toStringAsFixed(2)} km/h"),
+                    Text(chartInfo[0]),
+                    Text("${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
                   ],
                 ),
                 SizedBox(height: 15,),
                 Column(
                   children: [
-                    Text("VELOCIDADE MÉDIA"),
-                    Text("${avgValue.toStringAsFixed(2)} km/h")
+                    Text(chartInfo[1]),
+                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
+                  ],
+                ),
+                SizedBox(height: 15,),
+                Column(
+                  children: [
+                    Text(chartInfo[2]),
+                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
                   ],
                 ),
               ],
@@ -260,8 +299,8 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
         ),
       ),
       SfCartesianChart(
-        title: const ChartTitle(
-          text: "Velocidade GPS em função do tempo",
+        title: ChartTitle(
+          text: value_column == 16 ? "longitude em função da latitude" : "${chartInfo[0].split("\n")[0]} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -293,7 +332,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
               fontSize: 14,
               fontWeight: FontWeight.w500
           ),
-          title: AxisTitle(text: "ARRUMAR"),
+          title: AxisTitle(text: "Latitude"),
         ),
         primaryYAxis: NumericAxis(
             labelStyle: const TextStyle(
@@ -301,7 +340,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
             ),
-            title: const AxisTitle(text: "km/h"),
+            title: AxisTitle(text: chartInfo[2]),
             minimum: value_column != 16 ? (minYAxis + (minYAxis * 0.1)) : null,
             maximum: value_column != 16 ? (maxYAxis + (maxYAxis * 0.1)) : null,
       ),
@@ -325,6 +364,26 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
       ),
     ],
   );
+}
+
+List<String> getInfoCard(int value_column) {
+
+  switch (value_column) {
+    case 0:
+    case 1:
+    case 2:
+      return CARD_INFO[0];
+    case 17:
+      return CARD_INFO[1];
+    case 18:
+      return CARD_INFO[5];
+    case 16:
+      return CARD_INFO[6];
+
+  }
+
+  return [""];
+
 }
 
 class DataPoints {
