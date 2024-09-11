@@ -146,6 +146,14 @@ class _ChartState extends State<Chart> {
                     },
                     child: Text("Latitude/Longitude")
                 ),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 18;
+                      });
+                    },
+                    child: Text("Esterçamento")
+                ),
                 IconButton(
                     onPressed:() => setState(() {
                       _shouldDisplayFutureBuilder = true;
@@ -291,9 +299,11 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
             labelStyle: const TextStyle(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.w500
+                fontWeight: FontWeight.w500,
             ),
             title: const AxisTitle(text: "km/h"),
+            minimum: value_column != 16 ? (minYAxis + (minYAxis * 0.1)) : null,
+            maximum: value_column != 16 ? (maxYAxis + (maxYAxis * 0.1)) : null,
       ),
         series: value_column != 16 ? <FastLineSeries<DataPoints, DateTime>>[
           // Initialize line series with data points
