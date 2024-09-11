@@ -183,9 +183,9 @@ Future<List<List<dynamic>>> processCsv() async {
 Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_column) {
 
   List<DataPoints> _dataPoints = [];
+  List<DataPointsGPS> _dataPointsGps = [];
 
   var time_column = COLUMNS.HOUR.index;
-  //var value_column = COLUMNS.VEL_GPS.index;
 
   double maxYAxis = csvData[value_column][1] as double;
   double minYAxis = csvData[value_column][1] as double;
@@ -194,6 +194,12 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
 
   for (var item in csvData.skip(1)) {
     try {
+      if (value_column == 16) {
+        double long = item[15] as double;
+        double lat = item[16] as double;
+        _dataPointsGps.add(DataPointsGPS(lat, long));
+        continue;
+      }
       if (item[value_column] as double > maxYAxis) {
         maxYAxis = item[value_column] as double;
       }
@@ -210,7 +216,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
       totalSum += item[value_column] as double;
       csvLength += 1;
     } catch (e) {
-      print("DEU ERRO");
+      print("DEU ERRO: ${e}");
     }
   };
 
@@ -218,7 +224,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
 
   return Column(
     children: [
-      Padding(
+      value_column == 16 ? SizedBox() : Padding(
         padding: const EdgeInsets.only(left: 40.0),
         child: Card(
           elevation: 20,
@@ -266,13 +272,20 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
           enableMouseWheelZooming: true,
           enablePinching: true,
         ),
-        primaryXAxis: const DateTimeCategoryAxis(
+        primaryXAxis: value_column != 16 ? DateTimeCategoryAxis(
             labelStyle: TextStyle(
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w500
             ),
           title: AxisTitle(text: "Horário"),
+        ) : NumericAxis(
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500
+          ),
+          title: AxisTitle(text: "ARRUMAR"),
         ),
         primaryYAxis: NumericAxis(
             labelStyle: const TextStyle(
@@ -280,11 +293,9 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
                 fontSize: 14,
                 fontWeight: FontWeight.w500
             ),
-            minimum: (minYAxis - 3).roundToDouble(),
-            maximum: (maxYAxis + 3).roundToDouble(),
             title: const AxisTitle(text: "km/h"),
       ),
-        series: <FastLineSeries<DataPoints, DateTime>>[
+        series: value_column != 16 ? <FastLineSeries<DataPoints, DateTime>>[
           // Initialize line series with data points
           FastLineSeries <DataPoints, DateTime>(
             color: Colors.orange[500],
@@ -292,7 +303,15 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
           ),
-        ],
+        ] : <ChartSeries<DataPointsGPS, double>>[
+          // Initialize line series with data points
+          LineSeries<DataPointsGPS, double>(
+            color: Colors.orange[500],
+            dataSource: _dataPointsGps,
+            xValueMapper: (DataPointsGPS value, _) => value.x,
+            yValueMapper: (DataPointsGPS value, _) => value.y,
+          ),
+        ].cast<CartesianSeries>(),
       ),
     ],
   );
@@ -302,4 +321,10 @@ class DataPoints {
   DataPoints (this.x, this.y);
   final DateTime? x;
   final num? y;
+}
+
+class DataPointsGPS {
+  DataPointsGPS (this.x, this.y);
+  final double? x;
+  final double? y;
 }
