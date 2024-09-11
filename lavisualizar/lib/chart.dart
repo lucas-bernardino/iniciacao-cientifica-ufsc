@@ -161,6 +161,33 @@ class _ChartState extends State<Chart> {
                 ElevatedButton(
                     onPressed: () {
                       setState(() {
+                        chartColumnOption = 7;
+                      });
+                    },
+                    child: Text("Roll")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 8;
+                      });
+                    },
+                    child: Text("Pitch")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        chartColumnOption = 9;
+                      });
+                    },
+                    child: Text("Yall")
+                ),
+                SizedBox(height: 10,),
+                ElevatedButton(
+                    onPressed: () {
+                      setState(() {
                         chartColumnOption = 17;
                       });
                     },
@@ -300,7 +327,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
       ),
       SfCartesianChart(
         title: ChartTitle(
-          text: value_column == 16 ? "longitude em função da latitude" : "${chartInfo[0].split("\n")[0]} em função do tempo",
+          text: value_column == 16 ? "longitude em função da latitude" : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -340,7 +367,7 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
             ),
-            title: AxisTitle(text: chartInfo[2]),
+            title: AxisTitle(text: "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
             minimum: value_column != 16 ? (minYAxis + (minYAxis * 0.1)) : null,
             maximum: value_column != 16 ? (maxYAxis + (maxYAxis * 0.1)) : null,
       ),
@@ -373,6 +400,12 @@ List<String> getInfoCard(int value_column) {
     case 1:
     case 2:
       return CARD_INFO[0];
+    case 7:
+      return CARD_INFO[2];
+    case 8:
+      return CARD_INFO[3];
+    case 9:
+      return CARD_INFO[4];
     case 17:
       return CARD_INFO[1];
     case 18:
