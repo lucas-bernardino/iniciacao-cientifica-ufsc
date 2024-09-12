@@ -55,6 +55,7 @@ class _ChartState extends State<Chart> {
   double maxValue = 0;
   double avgValue = 0;
   int chartColumnOption = 17;
+  Set<String> _chartQualitySelection = {"Qualidade"};
 
   List<bool> isButtonPressed = [
     false,
@@ -81,8 +82,8 @@ class _ChartState extends State<Chart> {
                 padding: EdgeInsets.only(right: 15.0),
                 child: Image(
                   image: AssetImage('images/lav-logo.png'),
-                  height: 250,
-                  width: 250,
+                  height: 200,
+                  width: 200,
                 ),
               ),
             ],
@@ -98,7 +99,7 @@ class _ChartState extends State<Chart> {
                         builder: (context, snapshot) {
                           if (snapshot.hasData) {
                             return buildChart(
-                                context, snapshot.data!, chartColumnOption);
+                                context, snapshot.data!, chartColumnOption, _chartQualitySelection);
                           } else {
                             return CircularProgressIndicator();
                           }
@@ -107,27 +108,6 @@ class _ChartState extends State<Chart> {
                 SizedBox(
                   height: 20,
                 ),
-                /*
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    MaterialButton(
-                        elevation: 20,
-                        padding: EdgeInsets.all(17),
-                        color: Colors.grey,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(15))
-                        ),
-                        child: Text("Adicionar Arquivos"),
-                        onPressed: () {
-                          setState(() {
-                            _shouldDisplayFutureBuilder = !_shouldDisplayFutureBuilder;
-                          });
-                        }
-                    ),
-                    SizedBox(width: 10,),
-                  ],
-                ),*/
                 MaterialButton(
                     elevation: 20,
                     padding: EdgeInsets.all(17),
@@ -141,6 +121,29 @@ class _ChartState extends State<Chart> {
                         _shouldDisplayOptions = true;
                       });
                     }),
+                SizedBox(height: 10,),
+                SegmentedButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStatePropertyAll(Colors.grey),
+                  ),
+                    segments: [
+                      ButtonSegment(
+                          value: "Performance",
+                          label: Text("Performance"),
+                      ),
+                      ButtonSegment(
+                          value: "Qualidade",
+                          label: Text("Qualidade"),
+                      ),
+                    ],
+                    selected: _chartQualitySelection,
+                    onSelectionChanged: (newSelection) => {
+                      setState(() {
+                        _chartQualitySelection = newSelection;
+                        print("Valor atual de _chartQualitySelection: ${_chartQualitySelection}");
+                      })
+                    },
+                )
               ],
             ),
           ),
@@ -368,7 +371,7 @@ Future<List<List<dynamic>>> processCsv() async {
 }
 
 Widget buildChart(
-    BuildContext context, List<List<dynamic>> csvData, int value_column) {
+    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality) {
   List<DataPoints> _dataPoints = [];
   List<DataPointsGPS> _dataPointsGps = [];
 
@@ -380,6 +383,8 @@ Widget buildChart(
   double totalSum = 0;
 
   List<String> chartInfo = getInfoCard(value_column);
+
+  bool isPerformance = chartQuality.contains("Performance");
 
   for (var item in csvData.skip(1)) {
     try {
@@ -480,13 +485,19 @@ Widget buildChart(
           enablePinching: true,
         ),
         primaryXAxis: value_column != 16
-            ? DateTimeCategoryAxis(
+            ? (isPerformance ? DateTimeAxis(
                 labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w500),
                 title: AxisTitle(text: "Horário"),
-              )
+              ) : DateTimeCategoryAxis(
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500),
+          title: AxisTitle(text: "Horário"),
+        ))
             : NumericAxis(
                 labelStyle: TextStyle(
                     color: Colors.white,
