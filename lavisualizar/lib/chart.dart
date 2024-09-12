@@ -7,7 +7,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:csv/csv.dart';
 
-enum COLUMNS{
+enum COLUMNS {
   ACEL_X,
   ACEL_Y,
   ACEL_Z,
@@ -42,7 +42,6 @@ List<List<String>> CARD_INFO = [
   ["LATITUDE", "LONGITUDE", "", ""]
 ];
 
-
 class Chart extends StatefulWidget {
   const Chart({super.key});
 
@@ -51,12 +50,23 @@ class Chart extends StatefulWidget {
 }
 
 class _ChartState extends State<Chart> {
-
   bool _shouldDisplayFutureBuilder = false;
   bool _shouldDisplayOptions = false;
   double maxValue = 0;
   double avgValue = 0;
   int chartColumnOption = 17;
+
+  List<bool> isButtonPressed = [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +79,11 @@ class _ChartState extends State<Chart> {
             children: [
               Padding(
                 padding: EdgeInsets.only(right: 15.0),
-                child: Image(image: AssetImage('images/lav-logo.png'), height: 250, width: 250,),
+                child: Image(
+                  image: AssetImage('images/lav-logo.png'),
+                  height: 250,
+                  width: 250,
+                ),
               ),
             ],
           ),
@@ -78,17 +92,22 @@ class _ChartState extends State<Chart> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _shouldDisplayFutureBuilder ? FutureBuilder(
-                  future: processCsv(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return buildChart(context, snapshot.data!, chartColumnOption);
-                    } else {
-                      return CircularProgressIndicator();
-                    }
-                  }
-                ) : const SizedBox(),
-                SizedBox(height: 20,),
+                _shouldDisplayFutureBuilder
+                    ? FutureBuilder(
+                        future: processCsv(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return buildChart(
+                                context, snapshot.data!, chartColumnOption);
+                          } else {
+                            return CircularProgressIndicator();
+                          }
+                        })
+                    : const SizedBox(),
+                SizedBox(
+                  height: 20,
+                ),
+                /*
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -108,122 +127,227 @@ class _ChartState extends State<Chart> {
                     ),
                     SizedBox(width: 10,),
                   ],
-                ),
+                ),*/
                 MaterialButton(
                     elevation: 20,
                     padding: EdgeInsets.all(17),
                     color: Colors.grey,
                     shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(15))
-                    ),
+                        borderRadius: BorderRadius.all(Radius.circular(15))),
                     child: Text("Escolher Dado"),
                     onPressed: () {
                       setState(() {
                         _shouldDisplayFutureBuilder = false;
                         _shouldDisplayOptions = true;
                       });
-                    }
-                ),
+                    }),
               ],
             ),
           ),
-          _shouldDisplayOptions ? Card(
-            elevation: 20,
-            child: Column(
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 0;
-                      });
-                    },
-                    child: Text("Aceleracao X")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 1;
-                      });
-                    },
-                    child: Text("Aceleracao Y")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 2;
-                      });
-                    },
-                    child: Text("Aceleracao Z")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 7;
-                      });
-                    },
-                    child: Text("Roll")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 8;
-                      });
-                    },
-                    child: Text("Pitch")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 9;
-                      });
-                    },
-                    child: Text("Yall")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 17;
-                      });
-                    },
-                    child: Text("Velocidade")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 16;
-                      });
-                    },
-                    child: Text("Latitude/Longitude")
-                ),
-                SizedBox(height: 10,),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        chartColumnOption = 18;
-                      });
-                    },
-                    child: Text("Esterçamento")
-                ),
-                IconButton(
-                    onPressed:() => setState(() {
-                      _shouldDisplayFutureBuilder = true;
-                      _shouldDisplayOptions = false;
-                    }),
-                    icon: Icon(Icons.check),
+          _shouldDisplayOptions
+              ? Card(
+                  elevation: 20,
+                  child: Column(
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 0;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[0] = true;
+                            });
+                          },
+                          style: isButtonPressed[0]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Aceleracao X")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 1;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[1] = true;
+                            });
+                          },
+                          style: isButtonPressed[1]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Aceleracao Y")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 2;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[2] = true;
+                            });
+                          },
+                          style: isButtonPressed[2]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Aceleracao Z")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 7;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[3] = true;
+                            });
+                          },
+                          style: isButtonPressed[3]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Roll")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 8;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[4] = true;
+                            });
+                          },
+                          style: isButtonPressed[4]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Pitch")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 9;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[5] = true;
+                            });
+                          },
+                          style: isButtonPressed[5]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Yall")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 17;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[6] = true;
+                            });
+                          },
+                          style: isButtonPressed[6]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Velocidade")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 16;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[7] = true;
+                            });
+                          },
+                          style: isButtonPressed[7]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Latitude/Longitude")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              chartColumnOption = 18;
+                              isButtonPressed = isButtonPressed
+                                  .map(
+                                    (e) => false,
+                                  )
+                                  .toList();
+                              isButtonPressed[8] = true;
+                            });
+                          },
+                          style: isButtonPressed[8]
+                              ? ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.grey))
+                              : null,
+                          child: Text("Esterçamento")),
+                      IconButton(
+                        onPressed: () => setState(() {
+                          _shouldDisplayFutureBuilder = true;
+                          _shouldDisplayOptions = false;
+                        }),
+                        icon: Icon(Icons.check),
+                      )
+                    ],
+                  ),
                 )
-              ],
-            ),
-          ) : SizedBox()
+              : SizedBox()
         ],
       ),
-
     );
   }
 }
@@ -235,9 +359,7 @@ Future<String?> getFilePath() async {
 }
 
 Future<List<List<dynamic>>> processCsv() async {
-
   String? path = await getFilePath();
-
 
   var result = await File(path!).readAsString();
   var csvList = const CsvToListConverter().convert(result, eol: "\n");
@@ -245,8 +367,8 @@ Future<List<List<dynamic>>> processCsv() async {
   return csvList;
 }
 
-Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_column) {
-
+Widget buildChart(
+    BuildContext context, List<List<dynamic>> csvData, int value_column) {
   List<DataPoints> _dataPoints = [];
   List<DataPointsGPS> _dataPointsGps = [];
 
@@ -278,56 +400,67 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
       int minutes = int.parse(rawDateTime.substring(3, 5));
       int seconds = int.parse(rawDateTime.substring(6, 8));
       int miliseconds = int.parse(rawDateTime.substring(9, 11));
-      DateTime dateTime = DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
+      DateTime dateTime =
+          DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
       _dataPoints.add(DataPoints(dateTime, item[value_column]));
       totalSum += item[value_column] as double;
       csvLength += 1;
     } catch (e) {
       print("DEU ERRO: ${e}");
     }
-  };
+  }
+  ;
 
   double avgValue = totalSum / csvLength;
 
   return Column(
     children: [
-      value_column == 16 ? SizedBox() : Padding(
-        padding: const EdgeInsets.only(left: 40.0),
-        child: Card(
-          elevation: 20,
-          color: Colors.orange[500],
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Column(
-                  children: [
-                    Text(chartInfo[0]),
-                    Text("${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
-                  ],
+      value_column == 16
+          ? SizedBox()
+          : Padding(
+              padding: const EdgeInsets.only(left: 40.0),
+              child: Card(
+                elevation: 20,
+                color: Colors.orange[500],
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Column(
+                        children: [
+                          Text(chartInfo[0]),
+                          Text(
+                              "${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      Column(
+                        children: [
+                          Text(chartInfo[1]),
+                          Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
+                        ],
+                      ),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      Column(
+                        children: [
+                          Text(chartInfo[2]),
+                          Text("${minYAxis.toStringAsFixed(2)} ${chartInfo[3]}")
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 15,),
-                Column(
-                  children: [
-                    Text(chartInfo[1]),
-                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
-                  ],
-                ),
-                SizedBox(height: 15,),
-                Column(
-                  children: [
-                    Text(chartInfo[2]),
-                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
       SfCartesianChart(
         title: ChartTitle(
-          text: value_column == 16 ? "longitude em função da latitude" : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
+          text: value_column == 16
+              ? "longitude em função da latitude"
+              : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -346,55 +479,58 @@ Widget buildChart(BuildContext context, List<List<dynamic>> csvData, int value_c
           enableMouseWheelZooming: true,
           enablePinching: true,
         ),
-        primaryXAxis: value_column != 16 ? DateTimeCategoryAxis(
-            labelStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500
-            ),
-          title: AxisTitle(text: "Horário"),
-        ) : NumericAxis(
-          labelStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500
-          ),
-          title: AxisTitle(text: "Latitude"),
-        ),
+        primaryXAxis: value_column != 16
+            ? DateTimeCategoryAxis(
+                labelStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500),
+                title: AxisTitle(text: "Horário"),
+              )
+            : NumericAxis(
+                labelStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500),
+                title: AxisTitle(text: "Latitude"),
+              ),
         primaryYAxis: NumericAxis(
-            labelStyle: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-            ),
-            title: AxisTitle(text: "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
-            minimum: value_column != 16 ? (minYAxis + (minYAxis * 0.1)) : null,
-            maximum: value_column != 16 ? (maxYAxis + (maxYAxis * 0.1)) : null,
-      ),
-        series: value_column != 16 ? <FastLineSeries<DataPoints, DateTime>>[
-          // Initialize line series with data points
-          FastLineSeries <DataPoints, DateTime>(
-            color: Colors.orange[500],
-            dataSource: _dataPoints,
-            xValueMapper: (DataPoints value, _) => value.x,
-            yValueMapper: (DataPoints value, _) => value.y,
+          labelStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
-        ] : <ChartSeries<DataPointsGPS, double>>[
-          // Initialize line series with data points
-          LineSeries<DataPointsGPS, double>(
-            color: Colors.orange[500],
-            dataSource: _dataPointsGps,
-            xValueMapper: (DataPointsGPS value, _) => value.x,
-            yValueMapper: (DataPointsGPS value, _) => value.y,
-          ),
-        ].cast<CartesianSeries>(),
+          title: AxisTitle(
+              text:
+                  "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
+          minimum: value_column != 16 ? (minYAxis - 1) : null,
+          maximum: value_column != 16 ? (maxYAxis + 1) : null,
+        ),
+        series: value_column != 16
+            ? <FastLineSeries<DataPoints, DateTime>>[
+                // Initialize line series with data points
+                FastLineSeries<DataPoints, DateTime>(
+                  color: Colors.orange[500],
+                  dataSource: _dataPoints,
+                  xValueMapper: (DataPoints value, _) => value.x,
+                  yValueMapper: (DataPoints value, _) => value.y,
+                ),
+              ]
+            : <ChartSeries<DataPointsGPS, double>>[
+                // Initialize line series with data points
+                LineSeries<DataPointsGPS, double>(
+                  color: Colors.orange[500],
+                  dataSource: _dataPointsGps,
+                  xValueMapper: (DataPointsGPS value, _) => value.x,
+                  yValueMapper: (DataPointsGPS value, _) => value.y,
+                ),
+              ].cast<CartesianSeries>(),
       ),
     ],
   );
 }
 
 List<String> getInfoCard(int value_column) {
-
   switch (value_column) {
     case 0:
     case 1:
@@ -412,21 +548,21 @@ List<String> getInfoCard(int value_column) {
       return CARD_INFO[5];
     case 16:
       return CARD_INFO[6];
-
   }
 
   return [""];
-
 }
 
 class DataPoints {
-  DataPoints (this.x, this.y);
+  DataPoints(this.x, this.y);
+
   final DateTime? x;
   final num? y;
 }
 
 class DataPointsGPS {
-  DataPointsGPS (this.x, this.y);
+  DataPointsGPS(this.x, this.y);
+
   final double? x;
   final double? y;
 }
