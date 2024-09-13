@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -124,9 +125,8 @@ class _ChartState extends State<Chart> {
                             }
                             else {
                               return buildChartGroup(
-                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection);
+                                  context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection);
                             }
-
                           } else {
                             return CircularProgressIndicator();
                           }
@@ -196,7 +196,7 @@ class _ChartState extends State<Chart> {
             ),
           ),
           _shouldDisplayOptions
-              ? (_chartGroupChoice.contains("Individual") ?
+              ? (_chartGroupChoice.contains("Grupo") ?
           Card(
             elevation: 20,
             child: Column(
@@ -260,6 +260,13 @@ class _ChartState extends State<Chart> {
                         MaterialStateProperty.all(Colors.grey))
                         : null,
                     child: Text("Velocidade X | Velocidade Y | Velocidade Z")
+                ),
+                IconButton(
+                  onPressed: () => setState(() {
+                    _shouldDisplayFutureBuilder = true;
+                    _shouldDisplayOptions = false;
+                  }),
+                  icon: Icon(Icons.check),
                 )
               ],
             ),
@@ -658,44 +665,74 @@ Widget buildChartIndividual(
 }
 
 Widget buildChartGroup(
-    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality) {
-  List<DataPoints> _dataPoints = [];
-  List<DataPointsGPS> _dataPointsGps = [];
+    BuildContext context, List<List<dynamic>> csvData, List<bool> pressedButtonOption, Set<String> chartQuality) {
+  List<DataPoints> _dataPoints1 = [];
+  List<DataPoints> _dataPoints2 = [];
+  List<DataPoints> _dataPoints3 = [];
 
   var time_column = COLUMNS.HOUR.index;
 
-  double maxYAxis = csvData[1][value_column] as double;
-  double minYAxis = csvData[1][value_column] as double;
-  int csvLength = 0;
-  double totalSum = 0;
+  List<int> values_column = [0, 0, 0];
+  if (pressedButtonOption[0] == true) {
+    values_column = [0, 1, 2];
+  }
+  else if (pressedButtonOption[1] == true) {
+    values_column = [7, 8, 9];
+  }
+  else if (pressedButtonOption[2] == true) {
+    values_column = [4, 5, 6];
+  }
 
-  List<String> chartInfo = getInfoCard(value_column);
+  double maxY1Axis = csvData[1][values_column[0]] as double;
+  double maxY2Axis = csvData[1][values_column[1]] as double;
+  double maxY3Axis = csvData[1][values_column[2]] as double;
+
+  double minY1Axis = csvData[1][values_column[0]] as double;
+  double minY2Axis = csvData[1][values_column[1]] as double;
+  double minY3Axis = csvData[1][values_column[2]] as double;
+  int csvLength = 0;
+  double totalSum1 = 0;
+  double totalSum2 = 0;
+  double totalSum3 = 0;
+
+  List<String> chartInfo1 = getInfoCard(values_column[0]);
+  List<String> chartInfo2 = getInfoCard(values_column[1]);
+  List<String> chartInfo3 = getInfoCard(values_column[2]);
 
   bool isPerformance = chartQuality.contains("Performance");
 
   for (var item in csvData.skip(1)) {
     try {
-      if (value_column == 16) {
-        double long = item[15] as double;
-        double lat = item[16] as double;
-        _dataPointsGps.add(DataPointsGPS(lat, long));
-        continue;
+      if (item[values_column[0]] as double > maxY1Axis) {
+        maxY1Axis = item[values_column[0]] as double;
       }
-      if (item[value_column] as double > maxYAxis) {
-        maxYAxis = item[value_column] as double;
+      if (item[values_column[0]] as double < minY1Axis) {
+        minY1Axis = item[values_column[0]] as double;
       }
-      if (item[value_column] as double < minYAxis) {
-        minYAxis = item[value_column] as double;
+      if (item[values_column[1]] as double > maxY2Axis) {
+        maxY2Axis = item[values_column[1]] as double;
+      }
+      if (item[values_column[1]] as double < minY2Axis) {
+        minY2Axis = item[values_column[1]] as double;
+      }
+      if (item[values_column[2]] as double > maxY3Axis) {
+        maxY3Axis = item[values_column[2]] as double;
+      }
+      if (item[values_column[2]] as double < minY3Axis) {
+        minY3Axis = item[values_column[2]] as double;
       }
       String rawDateTime = item[time_column].toString();
       int hour = int.parse(rawDateTime.substring(0, 2));
       int minutes = int.parse(rawDateTime.substring(3, 5));
       int seconds = int.parse(rawDateTime.substring(6, 8));
       int miliseconds = int.parse(rawDateTime.substring(9, 11));
-      DateTime dateTime =
-      DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
-      _dataPoints.add(DataPoints(dateTime, item[value_column]));
-      totalSum += item[value_column] as double;
+      DateTime dateTime = DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
+      _dataPoints1.add(DataPoints(dateTime, item[values_column[0]]));
+      _dataPoints2.add(DataPoints(dateTime, item[values_column[1]]));
+      _dataPoints3.add(DataPoints(dateTime, item[values_column[2]]));
+      totalSum1 += item[values_column[0]] as double;
+      totalSum2 += item[values_column[1]] as double;
+      totalSum3 += item[values_column[2]] as double;
       csvLength += 1;
     } catch (e) {
       print("DEU ERRO: ${e}");
@@ -703,56 +740,135 @@ Widget buildChartGroup(
   }
   ;
 
-  double avgValue = totalSum / csvLength;
+  double avgValue1 = totalSum1 / csvLength;
+  double avgValue2 = totalSum2 / csvLength;
+  double avgValue3 = totalSum3 / csvLength;
+
+  double maxY = [maxY1Axis, maxY2Axis, maxY3Axis].reduce(max);
+  double minY = [minY1Axis, minY2Axis, minY3Axis].reduce(min);
 
   return Column(
     children: [
-      value_column == 16
-          ? SizedBox()
-          : Padding(
+      Padding(
         padding: const EdgeInsets.only(left: 40.0),
-        child: Card(
-          elevation: 20,
-          color: Colors.orange[500],
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Card(
+              elevation: 20,
+              color: Colors.yellow[500],
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
                   children: [
-                    Text(chartInfo[0]),
-                    Text(
-                        "${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
+                    Column(
+                      children: [
+                        Text(chartInfo1[0]),
+                        Text(
+                            "${maxY1Axis.toStringAsFixed(2)} ${chartInfo1[3]}"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo1[1]),
+                        Text("${avgValue1.toStringAsFixed(2)} ${chartInfo1[3]}")
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo1[2]),
+                        Text("${minY1Axis.toStringAsFixed(2)} ${chartInfo1[3]}")
+                      ],
+                    ),
                   ],
                 ),
-                SizedBox(
-                  height: 15,
-                ),
-                Column(
-                  children: [
-                    Text(chartInfo[1]),
-                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
-                  ],
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                Column(
-                  children: [
-                    Text(chartInfo[2]),
-                    Text("${minYAxis.toStringAsFixed(2)} ${chartInfo[3]}")
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+            Card(
+              elevation: 20,
+              color: Colors.orange[500],
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Column(
+                      children: [
+                        Text(chartInfo2[0]),
+                        Text(
+                            "${maxY2Axis.toStringAsFixed(2)} ${chartInfo2[3]}"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo2[1]),
+                        Text("${avgValue2.toStringAsFixed(2)} ${chartInfo2[3]}")
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo2[2]),
+                        Text("${minY2Axis.toStringAsFixed(2)} ${chartInfo2[3]}")
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              elevation: 20,
+              color: Colors.red[500],
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Column(
+                      children: [
+                        Text(chartInfo3[0]),
+                        Text(
+                            "${maxY3Axis.toStringAsFixed(2)} ${chartInfo3[3]}"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo3[1]),
+                        Text("${avgValue3.toStringAsFixed(2)} ${chartInfo3[3]}")
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo3[2]),
+                        Text("${minY3Axis.toStringAsFixed(2)} ${chartInfo3[3]}")
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       SfCartesianChart(
         title: ChartTitle(
-          text: value_column == 16
-              ? "longitude em função da latitude"
-              : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
+          text: "${chartInfo1[0].split(" ")[0].toLowerCase()} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -771,8 +887,7 @@ Widget buildChartGroup(
           enableMouseWheelZooming: true,
           enablePinching: true,
         ),
-        primaryXAxis: value_column != 16
-            ? (isPerformance ? DateTimeAxis(
+        primaryXAxis: isPerformance ? DateTimeAxis(
           labelStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -784,13 +899,6 @@ Widget buildChartGroup(
               fontSize: 14,
               fontWeight: FontWeight.w500),
           title: AxisTitle(text: "Horário"),
-        ))
-            : NumericAxis(
-          labelStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Latitude"),
         ),
         primaryYAxis: NumericAxis(
           labelStyle: const TextStyle(
@@ -799,30 +907,31 @@ Widget buildChartGroup(
             fontWeight: FontWeight.w500,
           ),
           title: AxisTitle(
-              text:
-              "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
-          minimum: value_column != 16 ? (minYAxis - 1) : null,
-          maximum: value_column != 16 ? (maxYAxis + 1) : null,
+              text: "${chartInfo1[0].split(" ")[0].toLowerCase()} [${chartInfo1[3]}]"),
+          minimum: minY - 1,
+          maximum: maxY + 1,
         ),
-        series: value_column != 16
-            ? <FastLineSeries<DataPoints, DateTime>>[
+        series: <FastLineSeries<DataPoints, DateTime>>[
           // Initialize line series with data points
           FastLineSeries<DataPoints, DateTime>(
+            color: Colors.yellow[500],
+            dataSource: _dataPoints1,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+          FastLineSeries<DataPoints, DateTime>(
             color: Colors.orange[500],
-            dataSource: _dataPoints,
+            dataSource: _dataPoints2,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+          FastLineSeries<DataPoints, DateTime>(
+            color: Colors.red[500],
+            dataSource: _dataPoints3,
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
           ),
         ]
-            : <ChartSeries<DataPointsGPS, double>>[
-          // Initialize line series with data points
-          LineSeries<DataPointsGPS, double>(
-            color: Colors.orange[500],
-            dataSource: _dataPointsGps,
-            xValueMapper: (DataPointsGPS value, _) => value.x,
-            yValueMapper: (DataPointsGPS value, _) => value.y,
-          ),
-        ].cast<CartesianSeries>(),
       ),
     ],
   );
@@ -834,6 +943,12 @@ List<String> getInfoCard(int value_column) {
     case 1:
     case 2:
       return CARD_INFO_GROUP[0];
+    case 4:
+      return CARD_INFO_INDIVIDUAL[6];
+    case 5:
+      return CARD_INFO_INDIVIDUAL[7];
+    case 6:
+      return CARD_INFO_INDIVIDUAL[8];
     case 7:
       return CARD_INFO_GROUP[2];
     case 8:
