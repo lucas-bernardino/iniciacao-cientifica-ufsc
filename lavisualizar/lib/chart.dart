@@ -55,7 +55,7 @@ class _ChartState extends State<Chart> {
   double maxValue = 0;
   double avgValue = 0;
   int chartColumnOption = 17;
-  Set<String> _chartQualitySelection = {"Qualidade"};
+  Set<String> _chartQualitySelection = {"Performance"};
 
   List<bool> isButtonPressed = [
     false,
