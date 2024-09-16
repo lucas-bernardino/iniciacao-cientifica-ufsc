@@ -219,7 +219,9 @@ class _ChartState extends State<Chart> {
                         });
                       },
                       style: ButtonStyle(backgroundColor: isButtonPressedIndividual[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: Text("Aceleracao X | Aceleração Y | Aceleração Z", style: TextStyle(color: Colors.white))
+                      child: SizedBox(
+                          width: 285,
+                          child: Text("Aceleracao X | Aceleração Y | Aceleração Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
                   SizedBox(
                     height: 10,
@@ -236,7 +238,9 @@ class _ChartState extends State<Chart> {
                         });
                       },
                       style: ButtonStyle(backgroundColor: isButtonPressedIndividual[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: Text("Roll | Pitch | Yall", style: TextStyle(color: Colors.white))
+                      child: SizedBox(
+                          width: 285,
+                          child: Text("Roll | Pitch | Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
                   SizedBox(
                     height: 10,
@@ -253,7 +257,9 @@ class _ChartState extends State<Chart> {
                         });
                       },
                       style: ButtonStyle(backgroundColor: isButtonPressedIndividual[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: Text("Velocidade X | Velocidade Y | Velocidade Z", style: TextStyle(color: Colors.white),)
+                      child: SizedBox(
+                          width: 285,
+                          child: Text("Velocidade X | Velocidade Y | Velocidade Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
                   SizedBox(
                     height: 10,
@@ -289,7 +295,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Aceleracao X", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Aceleracao X", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -306,7 +314,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Aceleracao Y", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Aceleracao Y", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -323,7 +333,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Aceleracao Z", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Aceleracao Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -340,7 +352,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Roll", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Roll", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -357,7 +371,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[4] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Pitch", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Pitch", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -374,7 +390,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[5] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Yall", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -391,7 +409,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[6] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Velocidade", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                              width: 125,
+                                child: Text("Velocidade", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -408,7 +428,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[7] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Latitude/Longitude", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Latitude/Longitude", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         SizedBox(
                           height: 10,
                         ),
@@ -425,7 +447,9 @@ class _ChartState extends State<Chart> {
                               });
                             },
                             style: ButtonStyle(backgroundColor: isButtonPressedGroup[8] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: Text("Esterçamento", style: TextStyle(color: Colors.white),)),
+                            child: SizedBox(
+                                width: 125,
+                                child: Text("Esterçamento", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                         IconButton(
                           onPressed: () => setState(() {
                             _shouldDisplayFutureBuilder = true;
