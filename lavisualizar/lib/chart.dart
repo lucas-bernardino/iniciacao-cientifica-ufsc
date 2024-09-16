@@ -103,8 +103,8 @@ class _ChartState extends State<Chart> {
                 padding: EdgeInsets.only(right: 15.0),
                 child: Image(
                   image: AssetImage('images/lav-logo.png'),
-                  height: 200,
-                  width: 200,
+                  height: 150,
+                  width: 150,
                 ),
               ),
             ],
@@ -195,6 +195,9 @@ class _ChartState extends State<Chart> {
               ],
             ),
           ),
+          SizedBox(
+            height: 10,
+          ),
           _shouldDisplayOptions
               ? (_chartGroupChoice.contains("Grupo") ?
           Card(
@@ -267,203 +270,171 @@ class _ChartState extends State<Chart> {
             ),
           ) :
           Card(
-                  elevation: 20,
-                  child: Column(
-                    children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 0;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[0] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[0]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Aceleracao X")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 1;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[1] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[1]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Aceleracao Y")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 2;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[2] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[2]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Aceleracao Z")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 7;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[3] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[3]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Roll")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 8;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[4] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[4]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Pitch")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 9;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[5] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[5]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Yall")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 17;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[6] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[6]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Velocidade")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 16;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[7] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[7]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Latitude/Longitude")),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              chartColumnOption = 18;
-                              isButtonPressedGroup = isButtonPressedGroup
-                                  .map(
-                                    (e) => false,
-                                  )
-                                  .toList();
-                              isButtonPressedGroup[8] = true;
-                            });
-                          },
-                          style: isButtonPressedGroup[8]
-                              ? ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all(Colors.grey))
-                              : null,
-                          child: Text("Esterçamento")),
-                      IconButton(
-                        onPressed: () => setState(() {
-                          _shouldDisplayFutureBuilder = true;
-                          _shouldDisplayOptions = false;
-                        }),
-                        icon: Icon(Icons.check),
-                      )
-                    ],
+                  elevation: 30,
+                  color: Colors.black12,
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Column(
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 0;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[0] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Aceleracao X", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 1;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[1] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Aceleracao Y", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 2;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[2] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Aceleracao Z", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 7;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[3] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Roll", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 8;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[4] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[4] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Pitch", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 9;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[5] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[5] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Yall", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 17;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[6] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[6] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Velocidade", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 16;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[7] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[7] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Latitude/Longitude", style: TextStyle(color: Colors.white),)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                chartColumnOption = 18;
+                                isButtonPressedGroup = isButtonPressedGroup
+                                    .map(
+                                      (e) => false,
+                                    )
+                                    .toList();
+                                isButtonPressedGroup[8] = true;
+                              });
+                            },
+                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[8] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                            child: Text("Esterçamento", style: TextStyle(color: Colors.white),)),
+                        IconButton(
+                          onPressed: () => setState(() {
+                            _shouldDisplayFutureBuilder = true;
+                            _shouldDisplayOptions = false;
+                          }),
+                          icon: Icon(Icons.check, color: Colors.deepOrange,),
+                        )
+                      ],
+                    ),
                   ),
                 ))
               : SizedBox()
