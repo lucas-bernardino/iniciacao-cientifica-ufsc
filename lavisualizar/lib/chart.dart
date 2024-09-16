@@ -198,77 +198,72 @@ class _ChartState extends State<Chart> {
           _shouldDisplayOptions
               ? (_chartGroupChoice.contains("Grupo") ?
           Card(
-            elevation: 20,
-            child: Column(
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        isButtonPressedIndividual = isButtonPressedIndividual
-                            .map(
-                              (e) => false,
-                        )
-                            .toList();
-                        isButtonPressedIndividual[0] = true;
-                      });
-                    },
-                    style: isButtonPressedIndividual[0]
-                        ? ButtonStyle(
-                        backgroundColor:
-                        MaterialStateProperty.all(Colors.grey))
-                        : null,
-                    child: Text("Aceleracao X | Aceleração Y | Aceleração Z")
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        isButtonPressedIndividual = isButtonPressedIndividual
-                            .map(
-                              (e) => false,
-                        )
-                            .toList();
-                        isButtonPressedIndividual[1] = true;
-                      });
-                    },
-                    style: isButtonPressedIndividual[1]
-                        ? ButtonStyle(
-                        backgroundColor:
-                        MaterialStateProperty.all(Colors.grey))
-                        : null,
-                    child: Text("Roll | Pitch | Yall")
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        isButtonPressedIndividual = isButtonPressedIndividual
-                            .map(
-                              (e) => false,
-                        )
-                            .toList();
-                        isButtonPressedIndividual[2] = true;
-                      });
-                    },
-                    style: isButtonPressedIndividual[2]
-                        ? ButtonStyle(
-                        backgroundColor:
-                        MaterialStateProperty.all(Colors.grey))
-                        : null,
-                    child: Text("Velocidade X | Velocidade Y | Velocidade Z")
-                ),
-                IconButton(
-                  onPressed: () => setState(() {
-                    _shouldDisplayFutureBuilder = true;
-                    _shouldDisplayOptions = false;
-                  }),
-                  icon: Icon(Icons.check),
-                )
-              ],
+            elevation: 30,
+            color: Colors.black12,
+            child: Padding(
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isButtonPressedIndividual = isButtonPressedIndividual
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedIndividual[0] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedIndividual[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: Text("Aceleracao X | Aceleração Y | Aceleração Z", style: TextStyle(color: Colors.white))
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isButtonPressedIndividual = isButtonPressedIndividual
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedIndividual[1] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedIndividual[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: Text("Roll | Pitch | Yall", style: TextStyle(color: Colors.white))
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isButtonPressedIndividual = isButtonPressedIndividual
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedIndividual[2] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedIndividual[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: Text("Velocidade X | Velocidade Y | Velocidade Z", style: TextStyle(color: Colors.white),)
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      _shouldDisplayFutureBuilder = true;
+                      _shouldDisplayOptions = false;
+                    }),
+                    icon: Icon(Icons.check, color: Colors.deepOrange,),
+                  )
+                ],
+              ),
             ),
           ) :
           Card(
