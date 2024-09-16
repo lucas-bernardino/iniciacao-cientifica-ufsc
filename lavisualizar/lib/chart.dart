@@ -940,9 +940,11 @@ Widget buildChartGroup(
 List<String> getInfoCard(int value_column) {
   switch (value_column) {
     case 0:
+      return CARD_INFO_INDIVIDUAL[0];
     case 1:
+      return CARD_INFO_INDIVIDUAL[1];
     case 2:
-      return CARD_INFO_GROUP[0];
+      return CARD_INFO_INDIVIDUAL[2];
     case 4:
       return CARD_INFO_INDIVIDUAL[6];
     case 5:
