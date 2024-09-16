@@ -793,7 +793,7 @@ Widget buildChartGroup(
             ),
             Card(
               elevation: 20,
-              color: Colors.orange[500],
+              color: Colors.greenAccent,
               child: Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Column(
@@ -829,7 +829,7 @@ Widget buildChartGroup(
             ),
             Card(
               elevation: 20,
-              color: Colors.red[500],
+              color: Colors.blue[500],
               child: Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Column(
@@ -920,13 +920,13 @@ Widget buildChartGroup(
             yValueMapper: (DataPoints value, _) => value.y,
           ),
           FastLineSeries<DataPoints, DateTime>(
-            color: Colors.orange[500],
+            color: Colors.greenAccent,
             dataSource: _dataPoints2,
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
           ),
           FastLineSeries<DataPoints, DateTime>(
-            color: Colors.red[500],
+            color: Colors.blue[500],
             dataSource: _dataPoints3,
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
