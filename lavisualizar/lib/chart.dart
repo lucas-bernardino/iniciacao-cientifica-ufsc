@@ -138,10 +138,10 @@ class _ChartState extends State<Chart> {
                 MaterialButton(
                     elevation: 20,
                     padding: EdgeInsets.all(17),
-                    color: Colors.grey,
+                    color: Colors.black54,
                     shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(15))),
-                    child: Text("Escolher Dado"),
+                    child: Text("Escolher Dado", style: TextStyle(color: Colors.deepOrange)),
                     onPressed: () {
                       setState(() {
                         _shouldDisplayFutureBuilder = false;
@@ -149,48 +149,56 @@ class _ChartState extends State<Chart> {
                       });
                     }),
                 SizedBox(height: 10,), //_chartGroupChoice
-                SegmentedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(Colors.grey),
+                SizedBox(
+                  width: 280,
+                  child: SegmentedButton(
+                    selectedIcon: Icon(Icons.check, color: Colors.yellow,),
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(Colors.black54),
+                    ),
+                      segments: [
+                        ButtonSegment(
+                            value: "Performance",
+                            label: Text("Performance",  style: TextStyle(color: Colors.deepOrange)),
+                        ),
+                        ButtonSegment(
+                            value: "Qualidade",
+                            label: Text("Qualidade",  style: TextStyle(color: Colors.deepOrange)),
+                        ),
+                      ],
+                      selected: _chartQualitySelection,
+                      onSelectionChanged: (newSelection) => {
+                        setState(() {
+                          _chartQualitySelection = newSelection;
+                        })
+                      },
                   ),
-                    segments: [
-                      ButtonSegment(
-                          value: "Performance",
-                          label: Text("Performance"),
-                      ),
-                      ButtonSegment(
-                          value: "Qualidade",
-                          label: Text("Qualidade"),
-                      ),
-                    ],
-                    selected: _chartQualitySelection,
-                    onSelectionChanged: (newSelection) => {
-                      setState(() {
-                        _chartQualitySelection = newSelection;
-                      })
-                    },
                 ),
                 SizedBox(height: 10,),
-                SegmentedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(Colors.grey),
+                SizedBox(
+                  width: 280,
+                  child: SegmentedButton(
+                    selectedIcon: Icon(Icons.check, color: Colors.yellow,),
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(Colors.black54),
+                    ),
+                    segments: [
+                      ButtonSegment(
+                        value: "Individual",
+                        label: Text("Individual", style: TextStyle(color: Colors.deepOrange)),
+                      ),
+                      ButtonSegment(
+                        value: "Grupo",
+                        label: Text("Grupo", style: TextStyle(color: Colors.deepOrange)),
+                      ),
+                    ],
+                    selected: _chartGroupChoice,
+                    onSelectionChanged: (newSelection) => {
+                      setState(() {
+                        _chartGroupChoice = newSelection;
+                      })
+                    },
                   ),
-                  segments: [
-                    ButtonSegment(
-                      value: "Individual",
-                      label: Text("Individual"),
-                    ),
-                    ButtonSegment(
-                      value: "Grupo",
-                      label: Text("Grupo"),
-                    ),
-                  ],
-                  selected: _chartGroupChoice,
-                  onSelectionChanged: (newSelection) => {
-                    setState(() {
-                      _chartGroupChoice = newSelection;
-                    })
-                  },
                 )
               ],
             ),
