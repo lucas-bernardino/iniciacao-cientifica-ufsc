@@ -991,7 +991,8 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
 
   int numberOfFiles = csvData.length;
 
-  List<List<DataPointsCompare>> allDummies = [];
+  List<FastLineSeries<DataPointsCompare, double>> series = [];
+  List<Color> possibleColors = [Colors.yellow, Colors.greenAccent, Colors.blue, Colors.red, Colors.purple];
 
   var time_column = COLUMNS.HOUR.index;
 
@@ -1013,12 +1014,15 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
         print("DEU ERRO: ${e}");
       }
     }
-    allDummies.add(dummy);
+    series.add(
+        FastLineSeries<DataPointsCompare, double>(
+          color: possibleColors[i],
+          dataSource: dummy,
+          xValueMapper: (DataPointsCompare value, _) => value.x,
+          yValueMapper: (DataPointsCompare value, _) => value.y,
+        )
+    );
   }
-
-  List<DataPointsCompare> _dataPoints1 = allDummies[0];
-  List<DataPointsCompare> _dataPoints2 = allDummies[1];
-  List<DataPointsCompare> _dataPoints3 = allDummies[2];
 
   return SfCartesianChart(
       title: ChartTitle(
@@ -1057,27 +1061,7 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
         title: AxisTitle(
             text: "Alguma coisa em funcao do tempo"),
       ),
-      series: <FastLineSeries<DataPointsCompare, double>>[
-        // Initialize line series with data points
-        FastLineSeries<DataPointsCompare, double>(
-          color: Colors.yellow[500],
-          dataSource: _dataPoints1,
-          xValueMapper: (DataPointsCompare value, _) => value.x,
-          yValueMapper: (DataPointsCompare value, _) => value.y,
-        ),
-        FastLineSeries<DataPointsCompare, double>(
-          color: Colors.greenAccent,
-          dataSource: _dataPoints2,
-          xValueMapper: (DataPointsCompare value, _) => value.x,
-          yValueMapper: (DataPointsCompare value, _) => value.y,
-        ),
-        FastLineSeries<DataPointsCompare, double>(
-          color: Colors.blue[500],
-          dataSource: _dataPoints3,
-          xValueMapper: (DataPointsCompare value, _) => value.x,
-          yValueMapper: (DataPointsCompare value, _) => value.y,
-        ),
-      ]
+      series: series
   );
 }
 
