@@ -1092,7 +1092,7 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
       ),
       SfCartesianChart(
           title: ChartTitle(
-            text: "Alguma coisa em função do tempo",
+            text: "${chartColumnInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
             textStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -1116,7 +1116,7 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w500),
-              title: AxisTitle(text: "Horário")
+              title: AxisTitle(text: "Pontos")
           ),
           primaryYAxis: NumericAxis(
             labelStyle: const TextStyle(
@@ -1125,7 +1125,7 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
               fontWeight: FontWeight.w500,
             ),
             title: AxisTitle(
-                text: "Alguma coisa em funcao do tempo"),
+                text: "${chartColumnInfo[0].split(" ")[0].toLowerCase()} [${chartColumnInfo[3]}]"),
           ),
           series: series
       ),
