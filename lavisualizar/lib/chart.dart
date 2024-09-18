@@ -138,7 +138,7 @@ class _ChartState extends State<Chart> {
                     future: processCsvMultiple(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        return buildChartComparasion(context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection);
+                        return buildChartComparasion(context, snapshot.data!, chartColumnOption, _chartQualitySelection);
                       } else {
                         return CircularProgressIndicator();
                       }
@@ -987,15 +987,13 @@ Future<List<List<List<dynamic>>>> processCsvMultiple() async {
   return csvList;
 }
 
-Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, List<bool> pressedButtonOption, Set<String> chartQuality) {
+Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, int value_column, Set<String> chartQuality) {
 
   int numberOfFiles = csvData.length;
 
   List<List<DataPointsCompare>> allDummies = [];
 
   var time_column = COLUMNS.HOUR.index;
-
-  int value_column = 17;
 
   bool isPerformance = chartQuality.contains("Performance");
 
