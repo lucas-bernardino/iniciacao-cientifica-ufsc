@@ -138,7 +138,8 @@ class _ChartState extends State<Chart> {
                     future: processCsvMultiple(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        return buildChartComparasion(context, snapshot.data!, chartColumnOption, _chartQualitySelection);
+                        // snapshot.data!.$1 eh o csvData e snapshot.data!.$2 sao os nomes dos arquivos
+                        return buildChartComparasion(context, snapshot.data!.$1, chartColumnOption, _chartQualitySelection, snapshot.data!.$2);
                       } else {
                         return CircularProgressIndicator();
                       }
@@ -973,7 +974,7 @@ Widget buildChartGroup(
   );
 }
 
-Future<List<List<List<dynamic>>>> processCsvMultiple() async {
+Future<(List<List<List>>, List<String>)> processCsvMultiple() async {
   List<String> paths = await getFilePath(true) as List<String>;
 
   List<List<List<dynamic>>> csvList = [];
@@ -984,84 +985,151 @@ Future<List<List<List<dynamic>>>> processCsvMultiple() async {
     csvList.add(csvData);
   }
 
-  return csvList;
+  return (csvList, paths);
 }
 
-Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, int value_column, Set<String> chartQuality) {
+Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, int value_column, Set<String> chartQuality, List<String> fileNames) {
 
   int numberOfFiles = csvData.length;
 
   List<FastLineSeries<DataPointsCompare, double>> series = [];
+  List<Widget> cardsInfo = [];
   List<Color> possibleColors = [Colors.yellow, Colors.greenAccent, Colors.blue, Colors.red, Colors.purple];
-
-  var time_column = COLUMNS.HOUR.index;
+  List<String> chartColumnInfo = getInfoCard(value_column);
 
   bool isPerformance = chartQuality.contains("Performance");
 
   for (int i = 0; i < numberOfFiles; i++) {
     double count = 0;
+    double maxYAxis = csvData[i][value_column][0] as double;
+    double minYAxis = csvData[i][value_column][0] as double;
+    double totalSum = 0;
     List<DataPointsCompare> dummy = [];
+
     for (var item in csvData[i].skip(1)) {
       try {
-        String rawDateTime = item[time_column].toString();
-        int hour = int.parse(rawDateTime.substring(0, 2));
-        int minutes = int.parse(rawDateTime.substring(3, 5));
-        int seconds = int.parse(rawDateTime.substring(6, 8));
-        int miliseconds = int.parse(rawDateTime.substring(9, 11));
+        if (item[value_column] as double > maxYAxis) {
+          maxYAxis = item[value_column] as double;
+        }
+        if (item[value_column] as double < minYAxis) {
+          minYAxis = item[value_column] as double;
+        }
         dummy.add(DataPointsCompare(count, item[value_column]));
         count++;
+        totalSum += item[value_column];
       } catch (e) {
         print("DEU ERRO: ${e}");
       }
     }
-    series.add(
-        FastLineSeries<DataPointsCompare, double>(
-          color: possibleColors[i],
-          dataSource: dummy,
-          xValueMapper: (DataPointsCompare value, _) => value.x,
-          yValueMapper: (DataPointsCompare value, _) => value.y,
-        )
-    );
+
+    double avg = totalSum / count;
+
+  series.add(
+      FastLineSeries<DataPointsCompare, double>(
+        color: possibleColors[i],
+        dataSource: dummy,
+        xValueMapper: (DataPointsCompare value, _) => value.x,
+        yValueMapper: (DataPointsCompare value, _) => value.y,
+      )
+  );
+  var formatedString = fileNames[i].split(r"\").last;
+  cardsInfo.add(
+    Card(
+      elevation: 20,
+      color: possibleColors[i],
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text("${formatedString}"),
+            SizedBox(
+              height: 15,
+            ),
+            Column(
+              children: [
+                Text(chartColumnInfo[0]),
+                Text(
+                    "${maxYAxis.toStringAsFixed(2)} ${chartColumnInfo[3]}"),
+              ],
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            Column(
+              children: [
+                Text(chartColumnInfo[1]),
+                Text("${avg.toStringAsFixed(2)} ${chartColumnInfo[3]}")
+              ],
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            Column(
+              children: [
+                Text(chartColumnInfo[2]),
+                Text("${minYAxis.toStringAsFixed(2)} ${chartColumnInfo[3]}")
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
   }
 
-  return SfCartesianChart(
-      title: ChartTitle(
-        text: "Alguma coisa em função do tempo",
-        textStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 14,
+  return Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 40.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            ...cardsInfo.map((card) {
+              return card;
+            },),]
         ),
       ),
-      enableAxisAnimation: true,
-      tooltipBehavior: TooltipBehavior(
-        color: Colors.deepOrange,
-        enable: true,
-        borderColor: Colors.deepOrange,
-        borderWidth: 2,
-        header: "",
-      ),
-      zoomPanBehavior: ZoomPanBehavior(
-        enablePanning: true,
-        enableMouseWheelZooming: true,
-        enablePinching: true,
-      ),
-      primaryXAxis: NumericAxis(
-          labelStyle: TextStyle(
+      SfCartesianChart(
+          title: ChartTitle(
+            text: "Alguma coisa em função do tempo",
+            textStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
-              fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Horário")
+            ),
+          ),
+          enableAxisAnimation: true,
+          tooltipBehavior: TooltipBehavior(
+            color: Colors.deepOrange,
+            enable: true,
+            borderColor: Colors.deepOrange,
+            borderWidth: 2,
+            header: "",
+          ),
+          zoomPanBehavior: ZoomPanBehavior(
+            enablePanning: true,
+            enableMouseWheelZooming: true,
+            enablePinching: true,
+          ),
+          primaryXAxis: NumericAxis(
+              labelStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500),
+              title: AxisTitle(text: "Horário")
+          ),
+          primaryYAxis: NumericAxis(
+            labelStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            title: AxisTitle(
+                text: "Alguma coisa em funcao do tempo"),
+          ),
+          series: series
       ),
-      primaryYAxis: NumericAxis(
-        labelStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        title: AxisTitle(
-            text: "Alguma coisa em funcao do tempo"),
-      ),
-      series: series
+    ],
   );
 }
 
