@@ -63,7 +63,8 @@ class Chart extends StatefulWidget {
 }
 
 class _ChartState extends State<Chart> {
-  bool _shouldDisplayFutureBuilder = false;
+  bool _shouldDisplayFutureBuilderSingularFile = false;
+  bool _shouldDisplayFutureBuilderMultipleFiles = false;
   bool _shouldDisplayOptions = false;
   double maxValue = 0;
   double avgValue = 0;
@@ -114,7 +115,7 @@ class _ChartState extends State<Chart> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _shouldDisplayFutureBuilder
+                _shouldDisplayFutureBuilderSingularFile
                     ? FutureBuilder(
                         future: processCsv(),
                         builder: (context, snapshot) {
@@ -132,22 +133,52 @@ class _ChartState extends State<Chart> {
                           }
                         })
                     : const SizedBox(),
+                _shouldDisplayFutureBuilderMultipleFiles
+                    ? FutureBuilder(
+                    future: processCsvMultiple(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return buildChartComparasion(context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection);
+                      } else {
+                        return CircularProgressIndicator();
+                      }
+                    })
+                    : const SizedBox(),
                 SizedBox(
                   height: 20,
                 ),
-                MaterialButton(
-                    elevation: 20,
-                    padding: EdgeInsets.all(17),
-                    color: Colors.black54,
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(15))),
-                    child: Text("Escolher Dado", style: TextStyle(color: Colors.deepOrange)),
-                    onPressed: () {
-                      setState(() {
-                        _shouldDisplayFutureBuilder = false;
-                        _shouldDisplayOptions = true;
-                      });
-                    }),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MaterialButton(
+                        elevation: 20,
+                        padding: EdgeInsets.all(17),
+                        color: Colors.black54,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(15))),
+                        child: Text("Arquivo Único", style: TextStyle(color: Colors.deepOrange)),
+                        onPressed: () {
+                          setState(() {
+                            _shouldDisplayFutureBuilderSingularFile = false;
+                            _shouldDisplayOptions = true;
+                          });
+                        }),
+                    SizedBox(width: 15,),
+                    MaterialButton(
+                        elevation: 20,
+                        padding: EdgeInsets.all(17),
+                        color: Colors.black54,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(15))),
+                        child: Text("Arquivo Múltiplos", style: TextStyle(color: Colors.deepOrange)),
+                        onPressed: () {
+                          setState(() {
+                            _shouldDisplayFutureBuilderMultipleFiles = true;
+                            _shouldDisplayOptions = true;
+                          });
+                        }),
+                  ],
+                ),
                 SizedBox(height: 10,), //_chartGroupChoice
                 SizedBox(
                   width: 280,
@@ -156,22 +187,22 @@ class _ChartState extends State<Chart> {
                     style: ButtonStyle(
                       backgroundColor: WidgetStatePropertyAll(Colors.black54),
                     ),
-                      segments: [
-                        ButtonSegment(
-                            value: "Performance",
-                            label: Text("Performance",  style: TextStyle(color: Colors.deepOrange)),
-                        ),
-                        ButtonSegment(
-                            value: "Qualidade",
-                            label: Text("Qualidade",  style: TextStyle(color: Colors.deepOrange)),
-                        ),
-                      ],
-                      selected: _chartQualitySelection,
-                      onSelectionChanged: (newSelection) => {
-                        setState(() {
-                          _chartQualitySelection = newSelection;
-                        })
-                      },
+                    segments: [
+                      ButtonSegment(
+                        value: "Performance",
+                        label: Text("Performance",  style: TextStyle(color: Colors.deepOrange)),
+                      ),
+                      ButtonSegment(
+                        value: "Qualidade",
+                        label: Text("Qualidade",  style: TextStyle(color: Colors.deepOrange)),
+                      ),
+                    ],
+                    selected: _chartQualitySelection,
+                    onSelectionChanged: (newSelection) => {
+                      setState(() {
+                        _chartQualitySelection = newSelection;
+                      })
+                    },
                   ),
                 ),
                 SizedBox(height: 10,),
@@ -274,7 +305,7 @@ class _ChartState extends State<Chart> {
                   ),
                   IconButton(
                     onPressed: () => setState(() {
-                      _shouldDisplayFutureBuilder = true;
+                      _shouldDisplayFutureBuilderSingularFile = true;
                       _shouldDisplayOptions = false;
                     }),
                     icon: Icon(Icons.check, color: Colors.deepOrange,),
@@ -284,191 +315,191 @@ class _ChartState extends State<Chart> {
             ),
           ) :
           Card(
-                  elevation: 30,
-                  color: Colors.black12,
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 0;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[0] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Aceleracao X", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 1;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[1] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Aceleracao Y", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 2;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[2] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Aceleracao Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 7;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[3] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Roll", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 8;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[4] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[4] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Pitch", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 9;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[5] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[5] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 17;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[6] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[6] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                              width: 125,
-                                child: Text("Velocidade", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 16;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[7] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[7] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Latitude/Longitude", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                chartColumnOption = 18;
-                                isButtonPressedGroup = isButtonPressedGroup
-                                    .map(
-                                      (e) => false,
-                                    )
-                                    .toList();
-                                isButtonPressedGroup[8] = true;
-                              });
-                            },
-                            style: ButtonStyle(backgroundColor: isButtonPressedGroup[8] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                            child: SizedBox(
-                                width: 125,
-                                child: Text("Esterçamento", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
-                        IconButton(
-                          onPressed: () => setState(() {
-                            _shouldDisplayFutureBuilder = true;
-                            _shouldDisplayOptions = false;
-                          }),
-                          icon: Icon(Icons.check, color: Colors.deepOrange,),
-                        )
-                      ],
-                    ),
+            elevation: 30,
+            color: Colors.black12,
+            child: Padding(
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 0;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[0] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[0] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Aceleracao X", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
                   ),
-                ))
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 1;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[1] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Aceleracao Y", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 2;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[2] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[2] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Aceleracao Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 7;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[3] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Roll", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 8;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[4] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[4] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Pitch", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 9;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[5] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[5] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 17;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[6] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[6] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Velocidade", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 16;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[7] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[7] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Latitude/Longitude", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 18;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[8] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[8] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Esterçamento", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      _shouldDisplayFutureBuilderSingularFile = true;
+                      _shouldDisplayOptions = false;
+                    }),
+                    icon: Icon(Icons.check, color: Colors.deepOrange,),
+                  )
+                ],
+              ),
+            ),
+          ))
               : SizedBox()
         ],
       ),
@@ -476,20 +507,28 @@ class _ChartState extends State<Chart> {
   }
 }
 
-Future<String?> getFilePath() async {
-  final result = await FilePicker.platform.pickFiles(allowMultiple: false);
+Future<Object?> getFilePath(bool isMultiple) async {
+  print("Chamando com: ${isMultiple}");
+  final result = await FilePicker.platform.pickFiles(allowMultiple: isMultiple);
   if (result == null) return null;
-  return result.files.first.path;
+  if (!isMultiple) {
+    return result.files.first.path;
+  }
+  List<String> listOfPaths = [];
+  result.files.forEach((element) => listOfPaths.add(element.path.toString()),);
+  return listOfPaths;
 }
 
 Future<List<List<dynamic>>> processCsv() async {
-  String? path = await getFilePath();
+  String? path = await getFilePath(false) as String;
 
   var result = await File(path!).readAsString();
   var csvList = const CsvToListConverter().convert(result, eol: "\n");
 
   return csvList;
 }
+
+
 
 Widget buildChartIndividual(
     BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality) {
@@ -526,8 +565,7 @@ Widget buildChartIndividual(
       int minutes = int.parse(rawDateTime.substring(3, 5));
       int seconds = int.parse(rawDateTime.substring(6, 8));
       int miliseconds = int.parse(rawDateTime.substring(9, 11));
-      DateTime dateTime =
-          DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
+      DateTime dateTime = DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
       _dataPoints.add(DataPoints(dateTime, item[value_column]));
       totalSum += item[value_column] as double;
       csvLength += 1;
@@ -544,44 +582,44 @@ Widget buildChartIndividual(
       value_column == 16
           ? SizedBox()
           : Padding(
-              padding: const EdgeInsets.only(left: 40.0),
-              child: Card(
-                elevation: 20,
-                color: Colors.orange[500],
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      Column(
-                        children: [
-                          Text(chartInfo[0]),
-                          Text(
-                              "${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      Column(
-                        children: [
-                          Text(chartInfo[1]),
-                          Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
-                        ],
-                      ),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      Column(
-                        children: [
-                          Text(chartInfo[2]),
-                          Text("${minYAxis.toStringAsFixed(2)} ${chartInfo[3]}")
-                        ],
-                      ),
-                    ],
-                  ),
+        padding: const EdgeInsets.only(left: 40.0),
+        child: Card(
+          elevation: 20,
+          color: Colors.orange[500],
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Column(
+                  children: [
+                    Text(chartInfo[0]),
+                    Text(
+                        "${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
+                  ],
                 ),
-              ),
+                SizedBox(
+                  height: 15,
+                ),
+                Column(
+                  children: [
+                    Text(chartInfo[1]),
+                    Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
+                  ],
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                Column(
+                  children: [
+                    Text(chartInfo[2]),
+                    Text("${minYAxis.toStringAsFixed(2)} ${chartInfo[3]}")
+                  ],
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
       SfCartesianChart(
         title: ChartTitle(
           text: value_column == 16
@@ -607,12 +645,12 @@ Widget buildChartIndividual(
         ),
         primaryXAxis: value_column != 16
             ? (isPerformance ? DateTimeAxis(
-                labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
-                title: AxisTitle(text: "Horário"),
-              ) : DateTimeCategoryAxis(
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500),
+          title: AxisTitle(text: "Horário"),
+        ) : DateTimeCategoryAxis(
           labelStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -620,12 +658,12 @@ Widget buildChartIndividual(
           title: AxisTitle(text: "Horário"),
         ))
             : NumericAxis(
-                labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
-                title: AxisTitle(text: "Latitude"),
-              ),
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500),
+          title: AxisTitle(text: "Latitude"),
+        ),
         primaryYAxis: NumericAxis(
           labelStyle: const TextStyle(
             color: Colors.white,
@@ -634,29 +672,29 @@ Widget buildChartIndividual(
           ),
           title: AxisTitle(
               text:
-                  "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
+              "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
           minimum: value_column != 16 ? (minYAxis - 1) : null,
           maximum: value_column != 16 ? (maxYAxis + 1) : null,
         ),
         series: value_column != 16
             ? <FastLineSeries<DataPoints, DateTime>>[
-                // Initialize line series with data points
-                FastLineSeries<DataPoints, DateTime>(
-                  color: Colors.orange[500],
-                  dataSource: _dataPoints,
-                  xValueMapper: (DataPoints value, _) => value.x,
-                  yValueMapper: (DataPoints value, _) => value.y,
-                ),
-              ]
+          // Initialize line series with data points
+          FastLineSeries<DataPoints, DateTime>(
+            color: Colors.orange[500],
+            dataSource: _dataPoints,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+        ]
             : <ChartSeries<DataPointsGPS, double>>[
-                // Initialize line series with data points
-                LineSeries<DataPointsGPS, double>(
-                  color: Colors.orange[500],
-                  dataSource: _dataPointsGps,
-                  xValueMapper: (DataPointsGPS value, _) => value.x,
-                  yValueMapper: (DataPointsGPS value, _) => value.y,
-                ),
-              ].cast<CartesianSeries>(),
+          // Initialize line series with data points
+          LineSeries<DataPointsGPS, double>(
+            color: Colors.orange[500],
+            dataSource: _dataPointsGps,
+            xValueMapper: (DataPointsGPS value, _) => value.x,
+            yValueMapper: (DataPointsGPS value, _) => value.y,
+          ),
+        ].cast<CartesianSeries>(),
       ),
     ],
   );
@@ -865,73 +903,183 @@ Widget buildChartGroup(
         ),
       ),
       SfCartesianChart(
-        title: ChartTitle(
-          text: "${chartInfo1[0].split(" ")[0].toLowerCase()} em função do tempo",
-          textStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
-        ),
-        enableAxisAnimation: true,
-        tooltipBehavior: TooltipBehavior(
-          color: Colors.deepOrange,
-          enable: true,
-          borderColor: Colors.deepOrange,
-          borderWidth: 2,
-          header: "",
-        ),
-        zoomPanBehavior: ZoomPanBehavior(
-          enablePanning: true,
-          enableMouseWheelZooming: true,
-          enablePinching: true,
-        ),
-        primaryXAxis: isPerformance ? DateTimeAxis(
-          labelStyle: TextStyle(
+          title: ChartTitle(
+            text: "${chartInfo1[0].split(" ")[0].toLowerCase()} em função do tempo",
+            textStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
-              fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Horário"),
-        ) : DateTimeCategoryAxis(
-          labelStyle: TextStyle(
+            ),
+          ),
+          enableAxisAnimation: true,
+          tooltipBehavior: TooltipBehavior(
+            color: Colors.deepOrange,
+            enable: true,
+            borderColor: Colors.deepOrange,
+            borderWidth: 2,
+            header: "",
+          ),
+          zoomPanBehavior: ZoomPanBehavior(
+            enablePanning: true,
+            enableMouseWheelZooming: true,
+            enablePinching: true,
+          ),
+          primaryXAxis: isPerformance ? DateTimeAxis(
+            labelStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500),
+            title: AxisTitle(text: "Horário"),
+          ) : DateTimeCategoryAxis(
+            labelStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500),
+            title: AxisTitle(text: "Horário"),
+          ),
+          primaryYAxis: NumericAxis(
+            labelStyle: const TextStyle(
               color: Colors.white,
               fontSize: 14,
-              fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Horário"),
-        ),
-        primaryYAxis: NumericAxis(
-          labelStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w500,
+            ),
+            title: AxisTitle(
+                text: "${chartInfo1[0].split(" ")[0].toLowerCase()} [${chartInfo1[3]}]"),
+            minimum: minY - 1,
+            maximum: maxY + 1,
           ),
-          title: AxisTitle(
-              text: "${chartInfo1[0].split(" ")[0].toLowerCase()} [${chartInfo1[3]}]"),
-          minimum: minY - 1,
-          maximum: maxY + 1,
-        ),
-        series: <FastLineSeries<DataPoints, DateTime>>[
-          // Initialize line series with data points
-          FastLineSeries<DataPoints, DateTime>(
-            color: Colors.yellow[500],
-            dataSource: _dataPoints1,
-            xValueMapper: (DataPoints value, _) => value.x,
-            yValueMapper: (DataPoints value, _) => value.y,
-          ),
-          FastLineSeries<DataPoints, DateTime>(
-            color: Colors.greenAccent,
-            dataSource: _dataPoints2,
-            xValueMapper: (DataPoints value, _) => value.x,
-            yValueMapper: (DataPoints value, _) => value.y,
-          ),
-          FastLineSeries<DataPoints, DateTime>(
-            color: Colors.blue[500],
-            dataSource: _dataPoints3,
-            xValueMapper: (DataPoints value, _) => value.x,
-            yValueMapper: (DataPoints value, _) => value.y,
-          ),
-        ]
+          series: <FastLineSeries<DataPoints, DateTime>>[
+            // Initialize line series with data points
+            FastLineSeries<DataPoints, DateTime>(
+              color: Colors.yellow[500],
+              dataSource: _dataPoints1,
+              xValueMapper: (DataPoints value, _) => value.x,
+              yValueMapper: (DataPoints value, _) => value.y,
+            ),
+            FastLineSeries<DataPoints, DateTime>(
+              color: Colors.greenAccent,
+              dataSource: _dataPoints2,
+              xValueMapper: (DataPoints value, _) => value.x,
+              yValueMapper: (DataPoints value, _) => value.y,
+            ),
+            FastLineSeries<DataPoints, DateTime>(
+              color: Colors.blue[500],
+              dataSource: _dataPoints3,
+              xValueMapper: (DataPoints value, _) => value.x,
+              yValueMapper: (DataPoints value, _) => value.y,
+            ),
+          ]
       ),
     ],
+  );
+}
+
+Future<List<List<List<dynamic>>>> processCsvMultiple() async {
+  List<String> paths = await getFilePath(true) as List<String>;
+
+  List<List<List<dynamic>>> csvList = [];
+
+  for (var file in paths) {
+    var result = await File(file!).readAsString();
+    var csvData = const CsvToListConverter().convert(result, eol: "\n");
+    csvList.add(csvData);
+  }
+
+  return csvList;
+}
+
+Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, List<bool> pressedButtonOption, Set<String> chartQuality) {
+
+  int numberOfFiles = csvData.length;
+
+  List<List<DataPointsCompare>> allDummies = [];
+
+  var time_column = COLUMNS.HOUR.index;
+
+  int value_column = 17;
+
+  bool isPerformance = chartQuality.contains("Performance");
+
+  for (int i = 0; i < numberOfFiles; i++) {
+    double count = 0;
+    List<DataPointsCompare> dummy = [];
+    for (var item in csvData[i].skip(1)) {
+      try {
+        String rawDateTime = item[time_column].toString();
+        int hour = int.parse(rawDateTime.substring(0, 2));
+        int minutes = int.parse(rawDateTime.substring(3, 5));
+        int seconds = int.parse(rawDateTime.substring(6, 8));
+        int miliseconds = int.parse(rawDateTime.substring(9, 11));
+        dummy.add(DataPointsCompare(count, item[value_column]));
+        count++;
+      } catch (e) {
+        print("DEU ERRO: ${e}");
+      }
+    }
+    allDummies.add(dummy);
+  }
+
+  List<DataPointsCompare> _dataPoints1 = allDummies[0];
+  List<DataPointsCompare> _dataPoints2 = allDummies[1];
+  List<DataPointsCompare> _dataPoints3 = allDummies[2];
+
+  return SfCartesianChart(
+      title: ChartTitle(
+        text: "Alguma coisa em função do tempo",
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+        ),
+      ),
+      enableAxisAnimation: true,
+      tooltipBehavior: TooltipBehavior(
+        color: Colors.deepOrange,
+        enable: true,
+        borderColor: Colors.deepOrange,
+        borderWidth: 2,
+        header: "",
+      ),
+      zoomPanBehavior: ZoomPanBehavior(
+        enablePanning: true,
+        enableMouseWheelZooming: true,
+        enablePinching: true,
+      ),
+      primaryXAxis: NumericAxis(
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500),
+          title: AxisTitle(text: "Horário")
+      ),
+      primaryYAxis: NumericAxis(
+        labelStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        title: AxisTitle(
+            text: "Alguma coisa em funcao do tempo"),
+      ),
+      series: <FastLineSeries<DataPointsCompare, double>>[
+        // Initialize line series with data points
+        FastLineSeries<DataPointsCompare, double>(
+          color: Colors.yellow[500],
+          dataSource: _dataPoints1,
+          xValueMapper: (DataPointsCompare value, _) => value.x,
+          yValueMapper: (DataPointsCompare value, _) => value.y,
+        ),
+        FastLineSeries<DataPointsCompare, double>(
+          color: Colors.greenAccent,
+          dataSource: _dataPoints2,
+          xValueMapper: (DataPointsCompare value, _) => value.x,
+          yValueMapper: (DataPointsCompare value, _) => value.y,
+        ),
+        FastLineSeries<DataPointsCompare, double>(
+          color: Colors.blue[500],
+          dataSource: _dataPoints3,
+          xValueMapper: (DataPointsCompare value, _) => value.x,
+          yValueMapper: (DataPointsCompare value, _) => value.y,
+        ),
+      ]
   );
 }
 
@@ -975,6 +1123,13 @@ class DataPoints {
 
 class DataPointsGPS {
   DataPointsGPS(this.x, this.y);
+
+  final double? x;
+  final double? y;
+}
+
+class DataPointsCompare {
+  DataPointsCompare(this.x, this.y);
 
   final double? x;
   final double? y;
