@@ -66,7 +66,7 @@ class _ComparisonState extends State<Comparison> {
   int chartColumnOption = 17;
   Set<String> _chartQualitySelection = {"Performance"};
   bool _shouldDisplayOptions = false;
-  Set<String> _chartGroupChoice = {"Individual"};
+
 
   List<bool> isButtonPressedGroup = [
     false,
@@ -129,7 +129,7 @@ class _ComparisonState extends State<Comparison> {
                         color: Colors.black54,
                         shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(Radius.circular(15))),
-                        child: Text("Arquivo Múltiplos", style: TextStyle(color: Colors.deepOrange)),
+                        child: Text("Selecionar Múltiplos Arquivos", style: TextStyle(color: Colors.deepOrange)),
                         onPressed: () {
                           setState(() {
                             _shouldDisplayFutureBuilderMultipleFiles = true;
@@ -165,31 +165,6 @@ class _ComparisonState extends State<Comparison> {
                   ),
                 ),
                 SizedBox(height: 10,),
-                SizedBox(
-                  width: 280,
-                  child: SegmentedButton(
-                    selectedIcon: Icon(Icons.check, color: Colors.yellow,),
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(Colors.black54),
-                    ),
-                    segments: [
-                      ButtonSegment(
-                        value: "Individual",
-                        label: Text("Individual", style: TextStyle(color: Colors.deepOrange)),
-                      ),
-                      ButtonSegment(
-                        value: "Grupo",
-                        label: Text("Grupo", style: TextStyle(color: Colors.deepOrange)),
-                      ),
-                    ],
-                    selected: _chartGroupChoice,
-                    onSelectionChanged: (newSelection) => {
-                      setState(() {
-                        _chartGroupChoice = newSelection;
-                      })
-                    },
-                  ),
-                )
               ],
             ),
           ),
@@ -395,15 +370,15 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
 
   List<FastLineSeries<DataPointsCompare, double>> series = [];
   List<Widget> cardsInfo = [];
-  List<Color> possibleColors = [Colors.yellow, Colors.greenAccent, Colors.blue, Colors.red, Colors.purple];
+  List<Color> possibleColors = [Colors.yellow, Colors.greenAccent, Colors.blue, Colors.red, Colors.purple, Colors.brown, Colors.white, Colors.black];
   List<String> chartColumnInfo = getInfoCard(value_column);
 
   bool isPerformance = chartQuality.contains("Performance");
 
   for (int i = 0; i < numberOfFiles; i++) {
     double count = 0;
-    double maxYAxis = csvData[i][value_column][0] as double;
-    double minYAxis = csvData[i][value_column][0] as double;
+    double maxYAxis = csvData[i][value_column+1][0] as double;
+    double minYAxis = csvData[i][value_column+1][0] as double;
     double totalSum = 0;
     List<DataPointsCompare> dummy = [];
 
