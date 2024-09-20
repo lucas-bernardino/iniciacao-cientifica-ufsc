@@ -64,7 +64,6 @@ class _ComparisonState extends State<Comparison> {
 
   bool _shouldDisplayFutureBuilderMultipleFiles = false;
   int chartColumnOption = 17;
-  Set<String> _chartQualitySelection = {"Performance"};
   bool _shouldDisplayOptions = false;
 
 
@@ -111,7 +110,7 @@ class _ComparisonState extends State<Comparison> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         // snapshot.data!.$1 eh o csvData e snapshot.data!.$2 sao os nomes dos arquivos
-                        return buildChartComparasion(context, snapshot.data!.$1, chartColumnOption, _chartQualitySelection, snapshot.data!.$2);
+                        return buildChartComparasion(context, snapshot.data!.$1, chartColumnOption, snapshot.data!.$2);
                       } else {
                         return CircularProgressIndicator();
                       }
@@ -137,32 +136,6 @@ class _ComparisonState extends State<Comparison> {
                           });
                         }),
                   ],
-                ),
-                SizedBox(height: 10,), //_chartGroupChoice
-                SizedBox(
-                  width: 280,
-                  child: SegmentedButton(
-                    selectedIcon: Icon(Icons.check, color: Colors.yellow,),
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(Colors.black54),
-                    ),
-                    segments: [
-                      ButtonSegment(
-                        value: "Performance",
-                        label: Text("Performance",  style: TextStyle(color: Colors.deepOrange)),
-                      ),
-                      ButtonSegment(
-                        value: "Qualidade",
-                        label: Text("Qualidade",  style: TextStyle(color: Colors.deepOrange)),
-                      ),
-                    ],
-                    selected: _chartQualitySelection,
-                    onSelectionChanged: (newSelection) => {
-                      setState(() {
-                        _chartQualitySelection = newSelection;
-                      })
-                    },
-                  ),
                 ),
                 SizedBox(height: 10,),
               ],
@@ -364,7 +337,7 @@ class _ComparisonState extends State<Comparison> {
   }
 }
 
-Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, int value_column, Set<String> chartQuality, List<String> fileNames) {
+Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csvData, int value_column, List<String> fileNames) {
 
   int numberOfFiles = csvData.length;
 
@@ -372,8 +345,6 @@ Widget buildChartComparasion(BuildContext context, List<List<List<dynamic>>> csv
   List<Widget> cardsInfo = [];
   List<Color> possibleColors = [Colors.yellow, Colors.greenAccent, Colors.blue, Colors.red, Colors.purple, Colors.brown, Colors.white, Colors.black];
   List<String> chartColumnInfo = getInfoCard(value_column);
-
-  bool isPerformance = chartQuality.contains("Performance");
 
   for (int i = 0; i < numberOfFiles; i++) {
     double count = 0;
