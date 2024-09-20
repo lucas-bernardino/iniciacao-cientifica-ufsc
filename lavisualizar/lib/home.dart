@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lavisualizar/chart.dart';
+import 'package:lavisualizar/comparar.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -34,7 +35,7 @@ class _HomeState extends State<Home> {
               NavigationRailDestination(
                   icon: Icon(Icons.settings_applications_outlined),
                   selectedIcon: Icon(Icons.settings_applications, ),
-                  label: Text("Configurações", style: TextStyle(color: Colors.white),)
+                  label: Text("Comparar", style: TextStyle(color: Colors.white),)
               )
             ],
           selectedIndex: _selectedIndex,
@@ -45,7 +46,7 @@ class _HomeState extends State<Home> {
                 index: _selectedIndex,
                 children: const [
                   Chart(),
-                  Text("CONFIGURACOES")
+                  Comparison()
                 ],
               )
           )
