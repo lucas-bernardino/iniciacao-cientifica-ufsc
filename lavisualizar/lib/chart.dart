@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:collection/collection.dart';
+
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:csv/csv.dart';
+
+import 'package:moving_average/moving_average.dart';
 
 enum COLUMNS {
   ACEL_X,
@@ -550,6 +554,16 @@ Widget buildChartIndividual(
 
   double avgValue = totalSum / csvLength;
 
+  List<DataPoints> _dataPointsFiltered = [];
+  if (value_column != 16) {
+    var ret = getFilteredValues(30, _dataPoints);
+    _dataPointsFiltered = ret[0] as List<DataPoints>;
+    print("Tamanho: ${_dataPointsFiltered.length}");
+    maxYAxis = ret[1] as double;
+    minYAxis = ret[2] as double;
+    avgValue = ret[3] as double;
+  }
+
   return Column(
     children: [
       value_column == 16
@@ -654,7 +668,7 @@ Widget buildChartIndividual(
           // Initialize line series with data points
           FastLineSeries<DataPoints, DateTime>(
             color: Colors.orange[500],
-            dataSource: _dataPoints,
+            dataSource: _dataPointsFiltered,
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
           ),
@@ -977,11 +991,40 @@ List<String> getInfoCard(int value_column) {
   return [""];
 }
 
+// Try to optimize this.
+List<Object> getFilteredValues(int filterParam, List<DataPoints> originalList) {
+  final simpleMovingAverage = MovingAverage<num>(
+    averageType: AverageType.simple,
+    windowSize: filterParam,
+    partialStart: true,
+    getValue: (num n) => n,
+    add: (List<num> data, num value) => value,
+  );
+
+  List<DataPoints> filteredList = [];
+  List<num> filteredValues = [];
+  for (var element in originalList) {
+    filteredValues.add(element.y!);
+  }
+  filteredValues = simpleMovingAverage(filteredValues);
+  for (int i = 0 ; i < originalList.length; i++) {
+    num valueFiltered = filteredValues[i];
+    DateTime? dateTime = originalList[i].x;
+    filteredList.add(DataPoints(dateTime, valueFiltered));
+  }
+
+  double maxValue = filteredValues.reduce(max) as double;
+  double minValue = filteredValues.reduce(min) as double;
+  double avgValue = (filteredValues.sum) / filteredValues.length;
+
+  return [filteredList, maxValue, minValue, avgValue];
+}
+
 class DataPoints {
   DataPoints(this.x, this.y);
 
   final DateTime? x;
-  final num? y;
+  late final num? y;
 }
 
 class DataPointsGPS {
