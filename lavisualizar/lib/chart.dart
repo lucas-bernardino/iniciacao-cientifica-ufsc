@@ -127,11 +127,11 @@ class _ChartState extends State<Chart> {
                           if (snapshot.hasData) {
                             if (_chartGroupChoice.contains("Individual")) {
                               return buildChartIndividual(
-                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection, _sliderFilterParam);
+                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
                             }
                             else {
                               return buildChartGroup(
-                                  context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection);
+                                  context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
                             }
                           } else {
                             return CircularProgressIndicator();
@@ -506,7 +506,6 @@ class _ChartState extends State<Chart> {
 }
 
 Future<Object?> getFilePath(bool isMultiple) async {
-  print("Chamando com: ${isMultiple}");
   final result = await FilePicker.platform.pickFiles(allowMultiple: isMultiple);
   if (result == null) return null;
   if (!isMultiple) {
@@ -527,7 +526,7 @@ Future<List<List<dynamic>>> processCsv() async {
 }
 
 Widget buildChartIndividual(
-    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality, double sliderFilterParam) {
+    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality, double sliderFilterParam, Set<String> chartGroupChoice) {
   List<DataPoints> _dataPoints = [];
   List<DataPointsGPS> _dataPointsGps = [];
 
@@ -575,9 +574,8 @@ Widget buildChartIndividual(
 
   List<DataPoints> _dataPointsFiltered = [];
   if (value_column != 16) {
-    var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints);
+    var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints, chartGroupChoice);
     _dataPointsFiltered = ret[0] as List<DataPoints>;
-    print("Tamanho: ${_dataPointsFiltered.length}");
     maxYAxis = ret[1] as double;
     minYAxis = ret[2] as double;
     avgValue = ret[3] as double;
@@ -707,10 +705,14 @@ Widget buildChartIndividual(
 }
 
 Widget buildChartGroup(
-    BuildContext context, List<List<dynamic>> csvData, List<bool> pressedButtonOption, Set<String> chartQuality) {
+    BuildContext context, List<List<dynamic>> csvData, List<bool> pressedButtonOption, Set<String> chartQuality, double sliderFilterParam, Set<String> chartGroupChoice) {
   List<DataPoints> _dataPoints1 = [];
   List<DataPoints> _dataPoints2 = [];
   List<DataPoints> _dataPoints3 = [];
+
+  List<DataPoints> _dataPointsFiltered1 = [];
+  List<DataPoints> _dataPointsFiltered2 = [];
+  List<DataPoints> _dataPointsFiltered3 = [];
 
   var time_column = COLUMNS.HOUR.index;
 
@@ -725,17 +727,6 @@ Widget buildChartGroup(
     values_column = [4, 5, 6];
   }
 
-  double maxY1Axis = csvData[1][values_column[0]] as double;
-  double maxY2Axis = csvData[1][values_column[1]] as double;
-  double maxY3Axis = csvData[1][values_column[2]] as double;
-
-  double minY1Axis = csvData[1][values_column[0]] as double;
-  double minY2Axis = csvData[1][values_column[1]] as double;
-  double minY3Axis = csvData[1][values_column[2]] as double;
-  int csvLength = 0;
-  double totalSum1 = 0;
-  double totalSum2 = 0;
-  double totalSum3 = 0;
 
   List<String> chartInfo1 = getInfoCard(values_column[0]);
   List<String> chartInfo2 = getInfoCard(values_column[1]);
@@ -745,24 +736,6 @@ Widget buildChartGroup(
 
   for (var item in csvData.skip(1)) {
     try {
-      if (item[values_column[0]] as double > maxY1Axis) {
-        maxY1Axis = item[values_column[0]] as double;
-      }
-      if (item[values_column[0]] as double < minY1Axis) {
-        minY1Axis = item[values_column[0]] as double;
-      }
-      if (item[values_column[1]] as double > maxY2Axis) {
-        maxY2Axis = item[values_column[1]] as double;
-      }
-      if (item[values_column[1]] as double < minY2Axis) {
-        minY2Axis = item[values_column[1]] as double;
-      }
-      if (item[values_column[2]] as double > maxY3Axis) {
-        maxY3Axis = item[values_column[2]] as double;
-      }
-      if (item[values_column[2]] as double < minY3Axis) {
-        minY3Axis = item[values_column[2]] as double;
-      }
       String rawDateTime = item[time_column].toString();
       int hour = int.parse(rawDateTime.substring(0, 2));
       int minutes = int.parse(rawDateTime.substring(3, 5));
@@ -772,19 +745,27 @@ Widget buildChartGroup(
       _dataPoints1.add(DataPoints(dateTime, item[values_column[0]]));
       _dataPoints2.add(DataPoints(dateTime, item[values_column[1]]));
       _dataPoints3.add(DataPoints(dateTime, item[values_column[2]]));
-      totalSum1 += item[values_column[0]] as double;
-      totalSum2 += item[values_column[1]] as double;
-      totalSum3 += item[values_column[2]] as double;
-      csvLength += 1;
     } catch (e) {
       print("DEU ERRO: ${e}");
     }
   }
   ;
 
-  double avgValue1 = totalSum1 / csvLength;
-  double avgValue2 = totalSum2 / csvLength;
-  double avgValue3 = totalSum3 / csvLength;
+
+  var ret = getFilteredValues(sliderFilterParam.round(), [_dataPoints1, _dataPoints2, _dataPoints3], chartGroupChoice);
+  _dataPointsFiltered1 = ret[0] as List<DataPoints>;
+  _dataPointsFiltered2 = ret[1] as List<DataPoints>;
+  _dataPointsFiltered3 = ret[2] as List<DataPoints>;
+  double maxY1Axis = ret[3] as double;
+  double minY1Axis = ret[4] as double;
+  double avgValue1 = ret[5] as double;
+  double maxY2Axis = ret[6] as double;
+  double minY2Axis = ret[7] as double;
+  double avgValue2 = ret[8] as double;
+  double maxY3Axis = ret[9] as double;
+  double minY3Axis = ret[10] as double;
+  double avgValue3 = ret[11] as double;
+
 
   double maxY = [maxY1Axis, maxY2Axis, maxY3Axis].reduce(max);
   double minY = [minY1Axis, minY2Axis, minY3Axis].reduce(min);
@@ -957,19 +938,19 @@ Widget buildChartGroup(
             // Initialize line series with data points
             FastLineSeries<DataPoints, DateTime>(
               color: Colors.yellow[500],
-              dataSource: _dataPoints1,
+              dataSource: _dataPointsFiltered1,
               xValueMapper: (DataPoints value, _) => value.x,
               yValueMapper: (DataPoints value, _) => value.y,
             ),
             FastLineSeries<DataPoints, DateTime>(
               color: Colors.greenAccent,
-              dataSource: _dataPoints2,
+              dataSource: _dataPointsFiltered2,
               xValueMapper: (DataPoints value, _) => value.x,
               yValueMapper: (DataPoints value, _) => value.y,
             ),
             FastLineSeries<DataPoints, DateTime>(
               color: Colors.blue[500],
-              dataSource: _dataPoints3,
+              dataSource: _dataPointsFiltered3,
               xValueMapper: (DataPoints value, _) => value.x,
               yValueMapper: (DataPoints value, _) => value.y,
             ),
@@ -1011,7 +992,7 @@ List<String> getInfoCard(int value_column) {
 }
 
 // Try to optimize this.
-List<Object> getFilteredValues(int filterParam, List<DataPoints> originalList) {
+List<Object> getFilteredValues<T>(int filterParam, T originalList, Set<String> chartGroupChoice) {
   final simpleMovingAverage = MovingAverage<num>(
     averageType: AverageType.simple,
     windowSize: filterParam,
@@ -1020,23 +1001,65 @@ List<Object> getFilteredValues(int filterParam, List<DataPoints> originalList) {
     add: (List<num> data, num value) => value,
   );
 
-  List<DataPoints> filteredList = [];
-  List<num> filteredValues = [];
-  for (var element in originalList) {
-    filteredValues.add(element.y!);
-  }
-  filteredValues = simpleMovingAverage(filteredValues);
-  for (int i = 0 ; i < originalList.length; i++) {
-    num valueFiltered = filteredValues[i];
-    DateTime? dateTime = originalList[i].x;
-    filteredList.add(DataPoints(dateTime, valueFiltered));
+  if (chartGroupChoice.contains("Individual")) {
+    List<DataPoints> filteredList = [];
+    List<num> filteredValues = [];
+    for (var element in originalList as List<DataPoints>) {
+      filteredValues.add(element.y!);
+    }
+    filteredValues = simpleMovingAverage(filteredValues);
+    for (int i = 0 ; i < originalList.length; i++) {
+      num valueFiltered = filteredValues[i];
+      DateTime? dateTime = originalList[i].x;
+      filteredList.add(DataPoints(dateTime, valueFiltered));
+    }
+
+    double maxValue = filteredValues.reduce(max) as double;
+    double minValue = filteredValues.reduce(min) as double;
+    double avgValue = (filteredValues.sum) / filteredValues.length;
+
+    return [filteredList, maxValue, minValue, avgValue];
   }
 
-  double maxValue = filteredValues.reduce(max) as double;
-  double minValue = filteredValues.reduce(min) as double;
-  double avgValue = (filteredValues.sum) / filteredValues.length;
+  List<List<DataPoints>> originalListCasted = originalList as List<List<DataPoints>>;
+  int loopSize = originalListCasted[0].length;
 
-  return [filteredList, maxValue, minValue, avgValue];
+  List<DataPoints> filteredList1 = [];
+  List<DataPoints> filteredList2 = [];
+  List<DataPoints> filteredList3 = [];
+  List<num> filteredValues1 = [];
+  List<num> filteredValues2 = [];
+  List<num> filteredValues3 = [];
+  for (int i = 0 ; i < loopSize; i++) {
+    filteredValues1.add(originalListCasted[0][i].y!);
+    filteredValues2.add(originalListCasted[1][i].y!);
+    filteredValues3.add(originalListCasted[2][i].y!);
+  }
+  filteredValues1 = simpleMovingAverage(filteredValues1);
+  filteredValues2 = simpleMovingAverage(filteredValues2);
+  filteredValues3 = simpleMovingAverage(filteredValues3);
+  for (int i = 0 ; i < loopSize; i++) {
+    num valueFiltered1 = filteredValues1[i];
+    num valueFiltered2 = filteredValues2[i];
+    num valueFiltered3 = filteredValues3[i];
+    DateTime? dateTime = originalList[0][i].x;
+    filteredList1.add(DataPoints(dateTime, valueFiltered1));
+    filteredList2.add(DataPoints(dateTime, valueFiltered2));
+    filteredList3.add(DataPoints(dateTime, valueFiltered3));
+  }
+
+  double maxValue1 = filteredValues1.reduce(max) as double;
+  double minValue1 = filteredValues1.reduce(min) as double;
+  double avgValue1 = (filteredValues1.sum) / filteredValues1.length;
+  double maxValue2 = filteredValues2.reduce(max) as double;
+  double minValue2 = filteredValues2.reduce(min) as double;
+  double avgValue2 = (filteredValues2.sum) / filteredValues2.length;
+  double maxValue3 = filteredValues3.reduce(max) as double;
+  double minValue3 = filteredValues3.reduce(min) as double;
+  double avgValue3 = (filteredValues3.sum) / filteredValues3.length;
+
+  return [filteredList1, filteredList2, filteredList3, maxValue1, minValue1, avgValue1, maxValue2, minValue2, avgValue2, maxValue3, minValue3, avgValue3];
+
 }
 
 class DataPoints {
