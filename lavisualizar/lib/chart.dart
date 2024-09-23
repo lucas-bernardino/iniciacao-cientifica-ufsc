@@ -75,6 +75,7 @@ class _ChartState extends State<Chart> {
   int chartColumnOption = 17;
   Set<String> _chartQualitySelection = {"Performance"};
   Set<String> _chartGroupChoice = {"Individual"};
+  double _sliderFilterParam = 1;
 
   List<bool> isButtonPressedIndividual = [
     false,
@@ -126,7 +127,7 @@ class _ChartState extends State<Chart> {
                           if (snapshot.hasData) {
                             if (_chartGroupChoice.contains("Individual")) {
                               return buildChartIndividual(
-                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection);
+                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection, _sliderFilterParam);
                             }
                             else {
                               return buildChartGroup(
@@ -209,7 +210,25 @@ class _ChartState extends State<Chart> {
                       })
                     },
                   ),
-                )
+                ),
+                SizedBox(height: 10,),
+                Text("Parâmetros do filtro", style: TextStyle(color: Colors.deepOrange)),
+                SizedBox(
+                  width: 400,
+                  child: Slider(
+                    activeColor: Colors.deepOrange,
+                    value: _sliderFilterParam,
+                    max: 50,
+                    min: 1,
+                    divisions: 50,
+                    label: _sliderFilterParam.round().toString(),
+                    onChanged: (double value) {
+                      setState(() {
+                        _sliderFilterParam = value;
+                      });
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -508,7 +527,7 @@ Future<List<List<dynamic>>> processCsv() async {
 }
 
 Widget buildChartIndividual(
-    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality) {
+    BuildContext context, List<List<dynamic>> csvData, int value_column, Set<String> chartQuality, double sliderFilterParam) {
   List<DataPoints> _dataPoints = [];
   List<DataPointsGPS> _dataPointsGps = [];
 
@@ -556,7 +575,7 @@ Widget buildChartIndividual(
 
   List<DataPoints> _dataPointsFiltered = [];
   if (value_column != 16) {
-    var ret = getFilteredValues(30, _dataPoints);
+    var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints);
     _dataPointsFiltered = ret[0] as List<DataPoints>;
     print("Tamanho: ${_dataPointsFiltered.length}");
     maxYAxis = ret[1] as double;
