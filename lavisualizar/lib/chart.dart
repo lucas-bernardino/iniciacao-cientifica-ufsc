@@ -40,9 +40,9 @@ enum COLUMNS {
 List<List<String>> CARD_INFO_GROUP = [
   ["ACELERAÇÃO MÁXIMA", "ACELERAÇÃO MÉDIA", "ACELERACAO MÍNIMA", "m/s²"],
   ["VELOCIDADE MÁXIMA", "VELOCIDADE MÉDIA", "VELOCIDADE MÍNIMO", "km/h"],
-  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "rad"],
-  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "rad"],
-  ["YALL MÁXIMO", "YALL MÉDIO", "YALL MÍNIMO", "rad"],
+  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "graus"],
+  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "graus"],
+  ["YAW MÁXIMO", "YAW MÉDIO", "YAW MÍNIMO", "graus"],
   ["ESTERÇAMENTO MÁXIMO", "ESTERÇAMENTO MÉDIO", "ESTERÇAMENTO MÍNIMO", "deg"],
   ["LATITUDE", "LONGITUDE", "", ""]
 ];
@@ -51,9 +51,9 @@ List<List<String>> CARD_INFO_INDIVIDUAL = [
   ["ACELERAÇÃO X MÁXIMA", "ACELERAÇÃO X MÉDIA", "ACELERACAO X MÍNIMA", "m/s²"],
   ["ACELERAÇÃO Y MÁXIMA", "ACELERAÇÃO Y MÉDIA", "ACELERACAO Y MÍNIMA", "m/s²"],
   ["ACELERAÇÃO Z MÁXIMA", "ACELERAÇÃO Z MÉDIA", "ACELERACAO Z MÍNIMA", "m/s²"],
-  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "rad"],
-  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "rad"],
-  ["YALL MÁXIMO", "YALL MÉDIO", "YALL MÍNIMO", "rad"],
+  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "graus"],
+  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "graus"],
+  ["YAW MÁXIMO", "YAW MÉDIO", "YAW MÍNIMO", "graus"],
   ["VELOCIDADE X MÁXIMA", "VELOCIDADE X MÉDIA", "VELOCIDADE X MÍNIMO", "km/h"],
   ["VELOCIDADE Y MÁXIMA", "VELOCIDADE Y MÉDIA", "VELOCIDADE Y MÍNIMO", "km/h"],
   ["VELOCIDADE Z MÁXIMA", "VELOCIDADE Z MÉDIA", "VELOCIDADE Z MÍNIMO", "km/h"],
@@ -122,21 +122,21 @@ class _ChartState extends State<Chart> {
               children: [
                 _shouldDisplayFutureBuilderSingularFile
                     ? FutureBuilder(
-                        future: processCsv(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            if (_chartGroupChoice.contains("Individual")) {
-                              return buildChartIndividual(
-                                  context, snapshot.data!, chartColumnOption, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
-                            }
-                            else {
-                              return buildChartGroup(
-                                  context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
-                            }
-                          } else {
-                            return CircularProgressIndicator();
-                          }
-                        })
+                    future: processCsv(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        if (_chartGroupChoice.contains("Individual")) {
+                          return buildChartIndividual(
+                              context, snapshot.data!, chartColumnOption, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
+                        }
+                        else {
+                          return buildChartGroup(
+                              context, snapshot.data!, isButtonPressedIndividual, _chartQualitySelection, _sliderFilterParam, _chartGroupChoice);
+                        }
+                      } else {
+                        return CircularProgressIndicator();
+                      }
+                    })
                     : const SizedBox(),
                 SizedBox(
                   height: 20,
@@ -277,7 +277,7 @@ class _ChartState extends State<Chart> {
                       style: ButtonStyle(backgroundColor: isButtonPressedIndividual[1] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
                       child: SizedBox(
                           width: 285,
-                          child: Text("Roll | Pitch | Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
+                          child: Text("Roll | Pitch | Yaw", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
                   SizedBox(
                     height: 10,
@@ -429,7 +429,7 @@ class _ChartState extends State<Chart> {
                       style: ButtonStyle(backgroundColor: isButtonPressedGroup[5] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
                       child: SizedBox(
                           width: 125,
-                          child: Text("Yall", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                          child: Text("Yaw", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   SizedBox(
                     height: 10,
                   ),
@@ -653,20 +653,20 @@ Widget buildChartIndividual(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Horário"),
+          title: AxisTitle(text: "Horário", textStyle: TextStyle(color: Colors.white)),
         ) : DateTimeCategoryAxis(
           labelStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Horário"),
+          title: AxisTitle(text: "Horário", textStyle: TextStyle(color: Colors.white)),
         ))
             : NumericAxis(
           labelStyle: TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w500),
-          title: AxisTitle(text: "Latitude"),
+          title: AxisTitle(text: "Latitude", textStyle: TextStyle(color: Colors.white)),
         ),
         primaryYAxis: NumericAxis(
           labelStyle: const TextStyle(
@@ -676,7 +676,7 @@ Widget buildChartIndividual(
           ),
           title: AxisTitle(
               text:
-              "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]"),
+              "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]", textStyle: TextStyle(color: Colors.white)),
           minimum: value_column != 16 ? (minYAxis - 1) : null,
           maximum: value_column != 16 ? (maxYAxis + 1) : null,
         ),
@@ -915,13 +915,13 @@ Widget buildChartGroup(
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w500),
-            title: AxisTitle(text: "Horário"),
+            title: AxisTitle(text: "Horário", textStyle: TextStyle(color: Colors.white)),
           ) : DateTimeCategoryAxis(
             labelStyle: TextStyle(
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w500),
-            title: AxisTitle(text: "Horário"),
+            title: AxisTitle(text: "Horário", textStyle: TextStyle(color: Colors.white)),
           ),
           primaryYAxis: NumericAxis(
             labelStyle: const TextStyle(
@@ -930,7 +930,7 @@ Widget buildChartGroup(
               fontWeight: FontWeight.w500,
             ),
             title: AxisTitle(
-                text: "${chartInfo1[0].split(" ")[0].toLowerCase()} [${chartInfo1[3]}]"),
+                text: "${chartInfo1[0].split(" ")[0].toLowerCase()} [${chartInfo1[3]}]", textStyle: TextStyle(color: Colors.white)),
             minimum: minY - 1,
             maximum: maxY + 1,
           ),
