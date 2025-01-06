@@ -47,7 +47,7 @@ fn get_url() -> Result<String, Box<dyn std::error::Error + 'static>> {
 
     let output_json: serde_json::Value = serde_json::from_str(output.as_str()).unwrap();
 
-    let mut sorted_by_creation = output_json["environments"][2]["shares"]
+    let mut sorted_by_creation = output_json["environments"][0]["shares"]
         .as_array()
         .expect("Failed to get array out of urls")
         .clone();
@@ -73,7 +73,7 @@ fn send_email(url: &String) -> Result<(), Box<dyn std::error::Error + 'static>> 
         .expect("Missing GMAIL_PASSWORD in .env file!")
         .replace("_", " ");
 
-    let creds = Credentials::new("microfoneprojeto@gmail.com".to_owned(), password.to_owned());
+    let creds = Credentials::new("projetomotobmw@gmail.com".to_owned(), password.to_owned());
 
     let mailer = SmtpTransport::relay("smtp.gmail.com")
         .unwrap()
