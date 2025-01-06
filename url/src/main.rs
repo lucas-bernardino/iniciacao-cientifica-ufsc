@@ -22,13 +22,9 @@ fn main() {
         Ok(_) => println!("Successfuly send email"),
         Err(e) => println!("ERROR: Could not send email:\n{e}"),
     };
-    match change_url_backend_env("katiau") {
-        Ok(_) => println!("Successfully change url in backend .env"),
-        Err(e) => println!("ERROR: Could not change url in backend .env:\n{e}"),
-    }
-    match change_url_frontend_env("vrum", "bibi") {
-        Ok(_) => println!("Successfully change url in frontend .env"),
-        Err(e) => println!("ERROR: Could not change url in frontend .env:\n{e}"),
+    match change_url_env_files(&url) {
+        Ok(_) => println!("Successfully change url in .env"),
+        Err(e) => println!("ERROR: Could not change url in .env:\n{e}"),
     }
 }
 
@@ -88,22 +84,14 @@ fn send_email(url: &String) -> Result<(), Box<dyn std::error::Error + 'static>> 
     Ok(())
 }
 
-fn change_url_backend_env(backend_url: &str) -> Result<(), Box<dyn std::error::Error + 'static>> {
+fn change_url_env_files(url: &str) -> Result<(), Box<dyn std::error::Error + 'static>> {
     let mut old_info_backend = std::fs::read_to_string(BACKEND_ENV_PATH)?;
     let offset = old_info_backend.rfind('=').unwrap();
-    old_info_backend.replace_range(offset.., format!("={val}", val = backend_url).as_str());
+    old_info_backend.replace_range(offset.., format!("={val}", val = url).as_str());
     std::fs::write(BACKEND_ENV_PATH, &old_info_backend)?;
-    Ok(())
-}
 
-fn change_url_frontend_env(
-    backend_url: &str,
-    flask_url: &str,
-) -> Result<(), Box<dyn std::error::Error + 'static>> {
-    let string_on_vite_env = format!(
-        "VITE_BACKEND_URL={}\nVITE_FLASK_URL={}",
-        backend_url, flask_url
-    );
+    let string_on_vite_env = format!("VITE_BACKEND_URL={}\nVITE_FLASK_URL={}", url, url);
     std::fs::write(VITE_ENV_PATH, &string_on_vite_env)?;
+
     Ok(())
 }
