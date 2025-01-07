@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ class _RealTimeState extends State<RealTime> {
 
   late IO.Socket socket;
   late Timer? _timer;
+  Map<String, dynamic> bikeInfo = initMap();
 
   @override
   void dispose() {
@@ -45,7 +47,10 @@ class _RealTimeState extends State<RealTime> {
     socket.onConnectError((err) => print(err));
     socket.onError((err) => print(err));
     socket.on('send',(data){
-      print("Recebi: ${data}");
+      setState(() {
+        bikeInfo = jsonDecode(data);
+      });
+      print("bikeInfo: ${bikeInfo}\nVALOR DA ACELERAÇÃO: ${bikeInfo["acel_x"]}");
     });
   }
 
@@ -62,40 +67,18 @@ class _RealTimeState extends State<RealTime> {
               Container(
                 width: 300,
                 height: 300,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Aceleração X"),
-                        Text("Aceleração Y"),
-                        Text("Aceleração Z"),
-                      ],
-                    ),
-                  ),
-
-                ),
+                child: buildXYZCard("ACELERAÇÃO",
+                    {"title": "Aceleração X", "value": "${bikeInfo["acel_x"]} m/s²"},
+                    {"title": "Aceleração Y", "value": "${bikeInfo["acel_y"]} m/s²"},
+                    {"title": "Aceleração Z", "value": "${bikeInfo["acel_z"]} m/s²"})
               ),
               Container(
                 width: 300,
                 height: 300,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Velocidade X"),
-                        Text("Velocidade Y"),
-                        Text("Velocidade Z"),
-                      ],
-                    ),
-                  ),
-
-                ),
+                child: buildXYZCard("ACELERAÇÃO",
+                    {"title": "Aceleração X", "value": "${bikeInfo["acel_x"]} m/s²"},
+                    {"title": "Aceleração Y", "value": "${bikeInfo["acel_y"]} m/s²"},
+                    {"title": "Aceleração Z", "value": "${bikeInfo["acel_z"]} m/s²"})
               ),
               Container(
                 width: 300,
@@ -122,4 +105,64 @@ class _RealTimeState extends State<RealTime> {
       )
     );
   }
+}
+
+Card buildXYZCard(String cardTitle, Map<String, String> dataX, Map<String, String> dataY, Map<String, String> dataZ) {
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          SizedBox(
+            child: Text(cardTitle),
+          ),
+          SizedBox(height: 30,),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                children: [
+                  Text(dataX["title"] ?? ""),
+                  Text(dataX["value"] ?? ""),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(dataY["title"] ?? ""),
+                  Text(dataY["value"] ?? ""),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(dataZ["title"] ?? ""),
+                  Text(dataZ["value"] ?? ""),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Map<String, dynamic> initMap() {
+  Map<String, dynamic> newMap = {
+    "id": "",
+    "acel_x": "",
+    "acel_y": "",
+    "acel_z": "",
+    "vel_x": "",
+    "vel_y": "",
+    "vel_z": "",
+    "roll": "",
+    "pitch": "",
+    "yaw": "",
+    "esterc": "",
+    "long": "",
+    "lat": "",
+    "veloc": "",
+  };
+  return newMap;
 }

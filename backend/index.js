@@ -25,7 +25,7 @@ io.on('connection', (socket) => {
 
   socket.on("send", async (data) => {
     create_sensor = await SensorModel.create(data);
-    socket.broadcast.emit("send", data);
+    socket.broadcast.emit("send", JSON.stringify(data));
   })
 
 });
