@@ -51,7 +51,7 @@ class _RealTimeState extends State<RealTime> {
   }
 
   initSocket() {
-    String api_url_socket = "wss://js1ehn5fl00j.share.zrok.io"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
+    String api_url_socket = "http://127.0.0.1:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
     socket = IO.io(api_url_socket, <String, dynamic>{
       'autoConnect': false,
       'transports': ['websocket'],
@@ -84,33 +84,38 @@ class _RealTimeState extends State<RealTime> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Container(
-                width: 700,
-                height: 700,
+                width: 480,
+                height: 350,
                 child: buildXYZCard("ACELERAÇÃO",
+                    "acel_x",
                     {"title": "Aceleração X", "value": "${bikeInfo["acel_x"]} m/s²"},
                     {"title": "Aceleração Y", "value": "${bikeInfo["acel_y"]} m/s²"},
                     {"title": "Aceleração Z", "value": "${bikeInfo["acel_z"]} m/s²"},
                     chartDataAndController)
               ),
-              /*
               Container(
-                width: 450,
-                height: 300,
+                width: 480,
+                height: 350,
                 child: buildXYZCard("VELOCIDADE",
+                    "vel_x",
                     {"title": "Velocidade X", "value": "${bikeInfo["vel_x"]} rad/s"},
                     {"title": "Velocidade Y", "value": "${bikeInfo["vel_y"]} rad/s"},
-                    {"title": "Velocidade Z", "value": "${bikeInfo["vel_z"]} rad/s"})
+                    {"title": "Velocidade Z", "value": "${bikeInfo["vel_z"]} rad/s"},
+                    chartDataAndController)
               ),
               Container(
-                  width: 450,
-                  height: 300,
+                  width: 480,
+                  height: 350,
                   child: buildXYZCard("EIXO",
+                      "roll",
                       {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
                       {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
-                      {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"})
+                      {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
+                      chartDataAndController)
               ),
             ],
           ),
+          /*
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -138,16 +143,16 @@ class _RealTimeState extends State<RealTime> {
                       {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
                       {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
                       {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"})
-              ),*/
+              ),
             ],
-          )
+          )*/
         ],
       )
     );
   }
 }
 
-Widget buildXYZCard(String cardTitle, Map<String, String> dataX, Map<String, String> dataY, Map<String, String> dataZ, MapChartController _chartController) {
+Widget buildXYZCard(String cardTitle, String mapVal, Map<String, String> dataX, Map<String, String> dataY, Map<String, String> dataZ, MapChartController _chartController) {
   return Card(
     child: Padding(
       padding: const EdgeInsets.all(8.0),
@@ -181,7 +186,7 @@ Widget buildXYZCard(String cardTitle, Map<String, String> dataX, Map<String, Str
               ),
             ],
           ),
-          buildXYZChart(cardTitle, "acel_x", _chartController)
+          buildXYZChart(cardTitle, mapVal, _chartController)
         ],
       ),
     ),
@@ -189,16 +194,15 @@ Widget buildXYZCard(String cardTitle, Map<String, String> dataX, Map<String, Str
 }
 
 Widget buildXYZChart(String title, String mapVal, MapChartController _chartController) {
-
   return Container(
     width: 400,
-    height: 400,
+    height: 200,
     child: SfCartesianChart(
         title: ChartTitle(
           text: "${title} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
-            fontSize: 14,
+            fontSize: 5,
           ),
         ),
         enableAxisAnimation: true,
@@ -206,7 +210,6 @@ Widget buildXYZChart(String title, String mapVal, MapChartController _chartContr
           color: Colors.deepOrange,
           enable: true,
           borderColor: Colors.deepOrange,
-          borderWidth: 2,
           header: "",
         ),
         zoomPanBehavior: ZoomPanBehavior(
@@ -217,14 +220,14 @@ Widget buildXYZChart(String title, String mapVal, MapChartController _chartContr
         primaryXAxis: DateTimeAxis(
             labelStyle: TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: 4,
                 fontWeight: FontWeight.w500),
             title: AxisTitle(text: "Pontos")
         ),
         primaryYAxis: NumericAxis(
           labelStyle: const TextStyle(
             color: Colors.white,
-            fontSize: 14,
+            fontSize: 4,
             fontWeight: FontWeight.w500,
           ),
           title: AxisTitle(
@@ -236,23 +239,20 @@ Widget buildXYZChart(String title, String mapVal, MapChartController _chartContr
                 _chartController[mapVal]?["controller"] = controller;
               },
               color: Colors.lightBlue.shade900,
-              width: 3.5,
               dataSource: _chartController[mapVal]?["chartData"],
               xValueMapper: (CartesianChartPoint point, _) => point.date,
               yValueMapper: (CartesianChartPoint point, _) => point.value,
               enableTooltip: true,
-              dataLabelSettings:DataLabelSettings(isVisible : true, color: Colors.lightBlue.shade700, borderRadius: 20)
+              dataLabelSettings: DataLabelSettings(
+                  isVisible: true,
+                  color: Colors.lightBlue.shade700,
+                  borderRadius: 2,
+                  textStyle: TextStyle(fontSize: 10))
           )
         ]
     ),
   );
 }
-
-/*
-jsonDecode para transformar em Map
-atualizar a lista dos valores
-setState no decode e na lista
-*/
 
 void updateBikeInfoList(Map<String, dynamic> _bikeInfo, MapChartController _chartController) async {
 
@@ -260,7 +260,9 @@ void updateBikeInfoList(Map<String, dynamic> _bikeInfo, MapChartController _char
 
   _chartController.forEach((key, subMap) {
 
-    subMap["chartData"].add(CartesianChartPoint(currentTime, _bikeInfo[key] as num));
+    var value = _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
+
+    subMap["chartData"].add(CartesianChartPoint(currentTime, value));
 
     if (subMap["chartData"].length == 10) {
       subMap["chartData"].removeAt(0);
