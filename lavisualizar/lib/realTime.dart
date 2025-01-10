@@ -17,13 +17,10 @@ class RealTime extends StatefulWidget {
   State<RealTime> createState() => _RealTimeState();
 }
 
-
 class _RealTimeState extends State<RealTime> {
-
   late IO.Socket socket;
   late Timer? _timer;
   Map<String, dynamic> bikeInfo = initMap();
-
 
   /*
   The variable chartDataAndController shoud look like this:
@@ -51,7 +48,8 @@ class _RealTimeState extends State<RealTime> {
   }
 
   initSocket() {
-    String api_url_socket = "http://127.0.0.1:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
+    String api_url_socket =
+        "http://127.0.0.1:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
     socket = IO.io(api_url_socket, <String, dynamic>{
       'autoConnect': false,
       'transports': ['websocket'],
@@ -63,7 +61,7 @@ class _RealTimeState extends State<RealTime> {
     socket.onDisconnect((_) => print('Connection Disconnection'));
     socket.onConnectError((err) => print(err));
     socket.onError((err) => print(err));
-    socket.on('send',(data){
+    socket.on('send', (data) {
       bikeInfo = jsonDecode(data);
       updateBikeInfoList(bikeInfo, chartDataAndController);
       setState(() {
@@ -76,115 +74,189 @@ class _RealTimeState extends State<RealTime> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly ,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Container(
-                width: 480,
-                height: 350,
-                child: buildXYZCard("ACELERAÇÃO",
-                    "acel_x",
-                    {"title": "Aceleração X", "value": "${bikeInfo["acel_x"]} m/s²"},
-                    {"title": "Aceleração Y", "value": "${bikeInfo["acel_y"]} m/s²"},
-                    {"title": "Aceleração Z", "value": "${bikeInfo["acel_z"]} m/s²"},
-                    chartDataAndController)
-              ),
-              Container(
-                width: 480,
-                height: 350,
-                child: buildXYZCard("VELOCIDADE",
-                    "vel_x",
-                    {"title": "Velocidade X", "value": "${bikeInfo["vel_x"]} rad/s"},
-                    {"title": "Velocidade Y", "value": "${bikeInfo["vel_y"]} rad/s"},
-                    {"title": "Velocidade Z", "value": "${bikeInfo["vel_z"]} rad/s"},
-                    chartDataAndController)
-              ),
-              Container(
-                  width: 480,
-                  height: 350,
-                  child: buildXYZCard("EIXO",
-                      "roll",
-                      {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
-                      {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
-                      {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
-                      chartDataAndController)
-              ),
-            ],
-          ),
-          /*
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Container(
-                  width: 450,
-                  height: 300,
-                  child: buildXYZCard("ACELERAÇÃO",
-                      {"title": "Aceleração X", "value": "${bikeInfo["acel_x"]} m/s²"},
-                      {"title": "Aceleração Y", "value": "${bikeInfo["acel_y"]} m/s²"},
-                      {"title": "Aceleração Z", "value": "${bikeInfo["acel_z"]} m/s²"},
-                      )
-              ),
-              Container(
-                  width: 450,
-                  height: 300,
-                  child: buildXYZCard("VELOCIDADE",
-                      {"title": "Velocidade X", "value": "${bikeInfo["vel_x"]} rad/s"},
-                      {"title": "Velocidade Y", "value": "${bikeInfo["vel_y"]} rad/s"},
-                      {"title": "Velocidade Z", "value": "${bikeInfo["vel_z"]} rad/s"})
-              ),
-              Container(
-                  width: 450,
-                  height: 300,
-                  child: buildXYZCard("EIXO",
-                      {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
-                      {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
-                      {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"})
-              ),
-            ],
-          )*/
-        ],
-      )
-    );
+        backgroundColor: Colors.black87,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "ACELERAÇÃO",
+                        "acel_x",
+                        {
+                          "title": "Aceleração X",
+                          "value": "${bikeInfo["acel_x"]} m/s²"
+                        },
+                        {
+                          "title": "Aceleração Y",
+                          "value": "${bikeInfo["acel_y"]} m/s²"
+                        },
+                        {
+                          "title": "Aceleração Z",
+                          "value": "${bikeInfo["acel_z"]} m/s²"
+                        },
+                        chartDataAndController)),
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "VELOCIDADE",
+                        "acel_y",
+                        {
+                          "title": "Velocidade X",
+                          "value": "${bikeInfo["vel_x"]} rad/s"
+                        },
+                        {
+                          "title": "Velocidade Y",
+                          "value": "${bikeInfo["vel_y"]} rad/s"
+                        },
+                        {
+                          "title": "Velocidade Z",
+                          "value": "${bikeInfo["vel_z"]} rad/s"
+                        },
+                        chartDataAndController)),
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "EIXO",
+                        "acel_z",
+                        {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
+                        {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
+                        {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
+                        chartDataAndController)),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "ACELERAÇÃO",
+                        "vel_x",
+                        {
+                          "title": "Aceleração X",
+                          "value": "${bikeInfo["acel_x"]} m/s²"
+                        },
+                        {
+                          "title": "Aceleração Y",
+                          "value": "${bikeInfo["acel_y"]} m/s²"
+                        },
+                        {
+                          "title": "Aceleração Z",
+                          "value": "${bikeInfo["acel_z"]} m/s²"
+                        },
+                        chartDataAndController)),
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "VELOCIDADE",
+                        "vel_y",
+                        {
+                          "title": "Velocidade X",
+                          "value": "${bikeInfo["vel_x"]} rad/s"
+                        },
+                        {
+                          "title": "Velocidade Y",
+                          "value": "${bikeInfo["vel_y"]} rad/s"
+                        },
+                        {
+                          "title": "Velocidade Z",
+                          "value": "${bikeInfo["vel_z"]} rad/s"
+                        },
+                        chartDataAndController)),
+                Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "EIXO",
+                        "vel_z",
+                        {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
+                        {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
+                        {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
+                        chartDataAndController)),
+              ],
+            )
+          ],
+        ));
   }
 }
 
-Widget buildXYZCard(String cardTitle, String mapVal, Map<String, String> dataX, Map<String, String> dataY, Map<String, String> dataZ, MapChartController _chartController) {
+Widget buildXYZCard(
+    String cardTitle,
+    String mapVal,
+    Map<String, String> dataX,
+    Map<String, String> dataY,
+    Map<String, String> dataZ,
+    MapChartController _chartController) {
   return Card(
+    color: Colors.black45,
+    elevation: 10,
     child: Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
           SizedBox(
-            child: Text(cardTitle),
+            child: Text(
+              cardTitle,
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
-          SizedBox(height: 30,),
+          SizedBox(
+            height: 10,
+          ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 children: [
-                  Text(dataX["title"] ?? ""),
-                  Text(dataX["value"] ?? ""),
+                  Text(
+                    dataX["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    dataX["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
               Column(
                 children: [
-                  Text(dataY["title"] ?? ""),
-                  Text(dataY["value"] ?? ""),
+                  Text(
+                    dataY["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    dataY["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
               Column(
                 children: [
-                  Text(dataZ["title"] ?? ""),
-                  Text(dataZ["value"] ?? ""),
+                  Text(
+                    dataZ["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    dataZ["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ],
+          ),
+          SizedBox(
+            height: 10,
           ),
           buildXYZChart(cardTitle, mapVal, _chartController)
         ],
@@ -193,13 +265,13 @@ Widget buildXYZCard(String cardTitle, String mapVal, Map<String, String> dataX, 
   );
 }
 
-Widget buildXYZChart(String title, String mapVal, MapChartController _chartController) {
+Widget buildXYZChart(
+    String title, String mapVal, MapChartController _chartController) {
   return Container(
-    width: 400,
-    height: 200,
+    width: double.infinity,
+    height: 250,
     child: SfCartesianChart(
         title: ChartTitle(
-          text: "${title} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
             fontSize: 5,
@@ -218,20 +290,20 @@ Widget buildXYZChart(String title, String mapVal, MapChartController _chartContr
           enablePinching: true,
         ),
         primaryXAxis: DateTimeAxis(
+            majorGridLines: MajorGridLines(width: 0),
             labelStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 4,
-                fontWeight: FontWeight.w500),
-            title: AxisTitle(text: "Pontos")
-        ),
+                color: Colors.white, fontSize: 4, fontWeight: FontWeight.w500),
+            title: AxisTitle(
+                text: "Tempo", textStyle: TextStyle(color: Colors.white))),
         primaryYAxis: NumericAxis(
+          majorGridLines: MajorGridLines(width: 0),
           labelStyle: const TextStyle(
             color: Colors.white,
             fontSize: 4,
             fontWeight: FontWeight.w500,
           ),
           title: AxisTitle(
-              text: "TITULO"),
+              text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
         ),
         series: <CartesianSeries>[
           LineSeries<CartesianChartPoint, DateTime>(
@@ -246,25 +318,23 @@ Widget buildXYZChart(String title, String mapVal, MapChartController _chartContr
               dataLabelSettings: DataLabelSettings(
                   isVisible: true,
                   color: Colors.lightBlue.shade700,
-                  borderRadius: 2,
-                  textStyle: TextStyle(fontSize: 10))
-          )
-        ]
-    ),
+                  borderRadius: 100,
+                  textStyle: TextStyle(fontSize: 10)))
+        ]),
   );
 }
 
-void updateBikeInfoList(Map<String, dynamic> _bikeInfo, MapChartController _chartController) async {
-
+void updateBikeInfoList(
+    Map<String, dynamic> _bikeInfo, MapChartController _chartController) async {
   DateTime currentTime = DateTime.now();
 
   _chartController.forEach((key, subMap) {
-
-    var value = _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
+    var value =
+        _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
 
     subMap["chartData"].add(CartesianChartPoint(currentTime, value));
 
-    if (subMap["chartData"].length == 10) {
+    if (subMap["chartData"].length == 30) {
       subMap["chartData"].removeAt(0);
       subMap["controller"]?.updateDataSource(
         addedDataIndexes: <int>[subMap["chartData"].length - 1],
@@ -276,7 +346,6 @@ void updateBikeInfoList(Map<String, dynamic> _bikeInfo, MapChartController _char
       );
     }
   });
-
 }
 
 Map<String, dynamic> initMap() {
@@ -357,9 +426,9 @@ MapChartController initMapChartController() {
   return newMap;
 }
 
-
 class CartesianChartPoint {
   CartesianChartPoint(this.date, this.value);
+
   final DateTime date;
   final num value;
 }
