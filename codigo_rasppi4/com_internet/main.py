@@ -8,32 +8,35 @@ import requests
 import subprocess
 import multiprocessing
 import math
-from handle_sensors_module import *
 from smbus2 import SMBus
+from handle_sensors_module import *
+import socketio
 
 
 sensor_gps = serial.Serial("/dev/serial0", 115200, timeout=1)
 sensor_angulo = SMBus(1)
 
-#Configuration to increase the frequency of the GPS Sensor.
-unlock = bytes.fromhex('FF AA 69 88 B5') # Before every command, it's necessary to send this command.
-save = bytes.fromhex('FF AA 00 00 00') # After every command, it's necessary to send this command.
+# Configuration to increase the frequency of the GPS Sensor.
+# Before every command, it's necessary to send this command.
+unlock = bytes.fromhex('FF AA 69 88 B5')
+# After every command, it's necessary to send this command.
+save = bytes.fromhex('FF AA 00 00 00')
 
 sensor_gps.write(unlock)
 time.sleep(0.1)
 
-rrate = bytes.fromhex('FF AA 03 0B 00') # Setting the rate to 100Hz.
+rrate = bytes.fromhex('FF AA 03 0B 00')  # Setting the rate to 100Hz.
 sensor_gps.write(rrate)
 time.sleep(0.1)
 
-baud = bytes.fromhex('FF AA 04 06 00') # Setting the baud rate to 115200.
+baud = bytes.fromhex('FF AA 04 06 00')  # Setting the baud rate to 115200.
 sensor_gps.write(baud)
 time.sleep(0.1)
 
 sensor_gps.write(save)
 time.sleep(0.1)
 
-#Flags and variables declarations.
+# Flags and variables declarations.
 contador = 0
 interrupt_flag = False
 check_bug = True
@@ -42,22 +45,10 @@ contador_botao = 0
 flag_button_collection = False
 data_sensors = ""
 
-# This function will return the api route that was sent to the email. The route will be used to make requests in order to save the data
-# in the DB.
-def get_api_route():
-    command = [ "python3", "aux_email.py"]
-    subprocess.run(command)
-    with open("rotaapi.txt", "r") as file:
-        readlines = file.readlines()
-        api = readlines[-1].strip()
-        return api
-
-session = requests.Session()
-
-ROTA_API = get_api_route().rstrip()
-
 # Every time the button is pressed, this function is called.
 # It toggles the flag so that no more data is received until the button is pressed again.
+
+
 def button_pressed_callback(channel):
     global interrupt_flag, data_sensors, contador_botao, flag_button_collection
     interrupt_flag = not interrupt_flag
@@ -66,26 +57,43 @@ def button_pressed_callback(channel):
     print(current_time)
     print(f"Contador: {contador}")
     data_sensors = ""
-    
-    # Every time the button is pressed to start saving the data, this piece of code will send a counter in the request body.
-    # This counter is used in the server side to create a new collection of data on MongoDB.
+
     if not flag_button_collection:
-        new_collection = session.post(ROTA_API + "/button_pressed", json = {"contador": contador_botao})
+        new_collection = session.post(
+            ROTA_API + "/button_pressed", json={"contador": contador_botao})
         print("Resposta button pressed: ", new_collection.text)
-        contador_botao+=1
+        contador_botao += 1
     flag_button_collection = not flag_button_collection
-    
+
 
 # Button setup
 BUTTON_GPIO = 26
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.add_event_detect(BUTTON_GPIO, GPIO.FALLING, callback=button_pressed_callback, bouncetime=1000)
+GPIO.add_event_detect(BUTTON_GPIO, GPIO.FALLING,
+                      callback=button_pressed_callback, bouncetime=1000)
+
+
+session = requests.Session()
+ROTA_API = "http://localhost:3001"
+
+sio = socketio.Client()
+
+
+@sio.event
+def connect():
+    print("Conectado via socket.")
+
+
+sio.connect(ROTA_API)
 
 
 # The tick_ms and calculate_elapse functions are auxiliary functions for the RPM and Speed calculations.
+
+
 def ticks_ms():
     return int(time.time() * 1000)
+
 
 def calculate_elapse(channel):
     global pulse, start_timer, elapse
@@ -94,14 +102,13 @@ def calculate_elapse(channel):
     start_timer = ticks_ms()
 
 
-#These variables can be called with the calculate_speed functions. They will be updated in that function.
+# These variables can be called with the calculate_speed functions. They will be updated in that function.
 dist_meas = 0.00
 km_per_hour = 0
 rpm = 0
 elapse = 0
 pulse = 0
 start_timer = ticks_ms()
-
 
 # Hall sensor, that is located on the wheel, setup.
 HALL_PIN = 23
@@ -110,6 +117,8 @@ sensor = GPIO.setup(HALL_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.add_event_detect(HALL_PIN, GPIO.FALLING, callback=calculate_elapse)
 
 # This functions changes the variables declared above. The parameter is the wheel radius, which was about 32 cm.
+
+
 def calculate_speed(r_cm):
     global pulse, elapse, rpm, dist_km, dist_meas, km_per_hour
     if elapse != 0:
@@ -121,7 +130,8 @@ def calculate_speed(r_cm):
         dist_meas = (dist_km * pulse) * 1000
         return km_per_hour
 
-# This function was needed since sometimes the GPS Sensor wasn't sending data. 
+
+# This function was needed since sometimes the GPS Sensor wasn't sending data.
 # It basically restarts the data acquisition and the flag is controlled on the thread functions.
 def check_bug_timer():
     global interrupt_flag, check_bug
@@ -131,6 +141,8 @@ def check_bug_timer():
         interrupt_flag = True
 
 # This is the piece of code responsible for receiving the GPS Sensor data.
+
+
 def gps_thread():
     global run_core_1
     global data_sensors
@@ -143,24 +155,25 @@ def gps_thread():
     # the output of the sensor, where acceleration is 51, angular speed is 52 and so on. This is why it's read and saved 86 bytes,
     # because it contains the whole chunk of data captured by the sensor at that instant.
     while interrupt_flag:
-        gps_read = sensor_gps.read(2)
-        if gps_read:
-            if binascii.hexlify(gps_read).decode('utf-8') == "5551" :
-                    check_bug = False
-                    
-                    if not interrupt_flag:
-                        data_sensors = ""
-                        gps_read = ""
-                        break
-                            
-                    data_worthy = "5551" + binascii.hexlify(sensor_gps.read(86)).decode('utf-8')
-                            
-                    data_sensors = ""
-                    data_sensors += data_worthy
+        read_gps = sensor_gps.read(2)
+        if read_gps:
+            if binascii.hexlify(read_gps).decode('utf-8') == "5551":
 
-    
+                check_bug = False
+                if not interrupt_flag:
+                    data_sensors = ""
+                    read_gps = ""
+                    break
+
+                data_worthy = "5551" + \
+                    binascii.hexlify(sensor_gps.read(86)).decode('utf-8')
+
+                data_sensors = ""
+                data_sensors += data_worthy
+
     data_worthy = ""
     data_sensors = ""
+
 
 # This is the piece of code responsible for receiving the angle data sent by the AS5600.
 def angle_thread():
@@ -176,10 +189,10 @@ def angle_thread():
 
             # The register whose address is 0x0C contains the high byte (11:8)
             high_byte = sensor_angulo.read_byte_data(0x36, 0x0C)
-            
+
             # The register whose address is 0x0D contains teh low byte (7:0)
             low_byte = sensor_angulo.read_byte_data(0x36, 0x0D)
-            
+
             # Since it's a 12-bit sensor, it's first necessary to shift the high byte by 8 bits and sum it with the low byte.
             # This will result in a 16 bit data, so it's perfomed a AND operation to get only the 12 bits.
             # The value 0.08789 comes from dividing 360 by 4096 (2^12)
@@ -195,16 +208,14 @@ def angle_thread():
                     angle_degrees = ""
                     break
 
-                
+                data_sensors += (str(datetime.datetime.now())).split()[1]
+
                 data_sensors += angle_degrees
 
                 if len(data_sensors) > 20:
                     calculate_speed(32)
-                    arquivo.write(data_sensors + "\n")
-                    
-                    # The handleSensor functions recieve an array of hexadecimal values and transform them into decimal, readable values.
-                    # Each sensor has a different approach on how to do that, and they're all present in the datasheet.
-                    acel_x, acel_y, acel_z, temp = handleSensor1(data_sensors[0:22])
+                    acel_x, acel_y, acel_z, temp = handleSensor1(
+                        data_sensors[0:22])
                     vel_x, vel_y, vel_z = handleSensor2(data_sensors[22:44])
                     roll, pitch, yaw = handleSensor3(data_sensors[44:66])
                     mag_x, mag_y, mag_z = handleSensor4(data_sensors[66:88])
@@ -215,39 +226,37 @@ def angle_thread():
 
                     # This will be sent in the request body in order to be saved in the database as well as viewed in the client.
                     dados_package = {
-                    "id": contador,
-                    "acel_x": acel_x,
-                    "acel_y": acel_y,
-                    "acel_z": acel_z,
-                    "vel_x": vel_x,
-                    "vel_y": vel_y,
-                    "vel_z": vel_z,
-                    "roll": roll,
-                    "pitch": pitch,
-                    "yaw": yaw,
-                    "mag_x": mag_x,
-                    "mag_y": mag_y,
-                    "mag_z": mag_z,
-                    "temp": temp,
-                    "esterc": angle,
-                    "rot": "{:.2f}".format(rpm),
-                    "veloc": velocidade_gps,
-                    "long": longitude,
-                    "lat": latitude,
-                    "press_ar": "{:.2f}".format(km_per_hour),
-                    "altitude": altitude,
+                        "id": contador,
+                        "acel_x": acel_x,
+                        "acel_y": acel_y,
+                        "acel_z": acel_z,
+                        "vel_x": vel_x,
+                        "vel_y": vel_y,
+                        "vel_z": vel_z,
+                        "roll": roll,
+                        "pitch": pitch,
+                        "yaw": yaw,
+                        "mag_x": mag_x,
+                        "mag_y": mag_y,
+                        "mag_z": mag_z,
+                        "temp": temp,
+                        "esterc": 33,
+                        "rot": "{:.2f}".format(rpm),
+                        "veloc": velocidade_gps,
+                        "long": longitude,
+                        "lat": latitude,
+                        "press_ar": "{:.2f}".format(km_per_hour),
+                        "altitude": altitude,
                     }
-                    post_data = session.post(ROTA_API + "/enviar", json=dados_package)
+                    sio.emit("send", dados_package)
                     print(dados_package)
+                    contador += 1
 
-                    contador +=1
-                    
                 data_sensors = ""
         except UnicodeDecodeError:
             print("ERRO UNICODE")
             pass
 
-    
     angle_degrees = ""
     data_sensors = ""
 
@@ -261,9 +270,8 @@ while True:
         sensor_gps.flushInput()
         sensor_gps.flushOutput()
 
-
         try:
- 	    # The number.txt is the file responsible for keeping track of how what should the name of the file be when saving the data
+            # The number.txt is the file responsible for keeping track of how what should the name of the file be when saving the data
             read_number = open('number.txt', 'r')
             last_number = int(read_number.read())
             # The data is saved in dadosN.txt, where N is the number tracked by the number.txt file.
@@ -280,18 +288,17 @@ while True:
             write_number.close()
             pass
 
-	    # In the next lines the threads are started.
+        # In the next lines the threads are started.
 
-        timer_thread = threading.Timer(1.5, check_bug_timer)  
-        check_bug = True  
+        timer_thread = threading.Timer(1.5, check_bug_timer)
+        check_bug = True
         timer_thread.start()
-        
+
         thread1 = threading.Thread(target=angle_thread)
         thread1.start()
 
-        
         gps_thread()
-        
+
         data_sensors = ""
         print("apos as threads")
 
