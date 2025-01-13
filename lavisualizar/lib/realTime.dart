@@ -37,6 +37,8 @@ class _RealTimeState extends State<RealTime> {
 
 
   List<bool> toggleButtonsAccel = [false, false, false];
+  List<bool> toggleButtonsVel = [false, false, false];
+  List<bool> toggleButtonsAxis = [false, false, false];
 
   @override
   void dispose() {
@@ -91,7 +93,7 @@ class _RealTimeState extends State<RealTime> {
                     height: 380,
                     child: buildXYZCard(
                         "ACELERAÇÃO",
-                        "vel",
+                        "acel",
                         {
                           "title": "Aceleração X",
                           "value": "${bikeInfo["acel_x"]} m/s²"
@@ -105,12 +107,12 @@ class _RealTimeState extends State<RealTime> {
                           "value": "${bikeInfo["acel_z"]} m/s²"
                         },
                         chartDataAndController, setState, toggleButtonsAccel)),
-                /*Container(
+                Container(
                     width: 480,
                     height: 380,
                     child: buildXYZCard(
                         "VELOCIDADE",
-                        "acel_y",
+                        "vel",
                         {
                           "title": "Velocidade X",
                           "value": "${bikeInfo["vel_x"]} rad/s"
@@ -123,17 +125,17 @@ class _RealTimeState extends State<RealTime> {
                           "title": "Velocidade Z",
                           "value": "${bikeInfo["vel_z"]} rad/s"
                         },
-                        chartDataAndController)),
+                        chartDataAndController, setState, toggleButtonsVel)),
                 Container(
                     width: 480,
                     height: 380,
                     child: buildXYZCard(
                         "EIXO",
-                        "acel_z",
+                        "axis",
                         {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
                         {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
                         {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
-                        chartDataAndController)),*/
+                        chartDataAndController, setState, toggleButtonsAxis)),
               ],
             ),
             /*Row(
@@ -302,8 +304,6 @@ Widget buildXYZChart(
   for (int i = 0 ; i < 3 ; i++) {
     String dataName = currentNameXyz[i];
     Color dataColor = chartColors[i];
-
-
 
     if (_toggleButtonsAccel[i] == true) {
       series.add(

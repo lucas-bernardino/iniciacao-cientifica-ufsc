@@ -2,14 +2,16 @@ from time import sleep
 import requests
 import socketio
 
+url = "http://localhost:3001"
+
 dados_package = {
   "id": 0,
   "acel_x": 0,
-  "acel_y": 0,
-  "acel_z": 0,
-  "vel_x": "100",
-  "vel_y": "100",
-  "vel_z": "100",
+  "acel_y": 1,
+  "acel_z": 2,
+  "vel_x": 100,
+  "vel_y": 101,
+  "vel_z": 102,
   "roll": "-1.4556884765625",
   "pitch": "0.2471923828125",
   "yaw": "143.096923828125",
@@ -45,18 +47,26 @@ def connect():
 sio.connect("http://127.0.0.1:3001")
 
 # Init 
-res = requests.post('http://localhost:3001/button_pressed', json=contador)
+res = requests.post(f'{url}/button_pressed', json=contador)
+
+i = 0
 
 def send_data_package():
+    global i
     sio.emit("send", dados_package)
-    dados_package["id"]+=1
-    dados_package["acel_x"]+=1
-    dados_package["acel_y"]+=1
-    dados_package["acel_z"]+=1
+    dados_package["id"]+=i
+    dados_package["acel_x"]+=i+1
+    dados_package["acel_y"]+=i+2
+    dados_package["acel_z"]+=i+3
+    
+    dados_package["vel_x"]+=i+1
+    dados_package["vel_y"]+=i+2
+    dados_package["vel_z"]+=i+3
+    i+=1
 
 while True:
     send_data_package()
-    sleep(0.01)
+    sleep(1)
 
 # res = requests.post('http://localhost:3001/enviar', json=dados_package)
 # print(res.text)
