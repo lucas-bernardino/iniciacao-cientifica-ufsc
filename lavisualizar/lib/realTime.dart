@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
 typedef MapChartController = Map<String, Map<String, dynamic>>;
 
 class RealTime extends StatefulWidget {
@@ -32,6 +34,9 @@ class _RealTimeState extends State<RealTime> {
   }
   */
   MapChartController chartDataAndController = initMapChartController();
+
+
+  List<bool> toggleButtonsAccel = [false, false, false];
 
   @override
   void dispose() {
@@ -86,7 +91,7 @@ class _RealTimeState extends State<RealTime> {
                     height: 380,
                     child: buildXYZCard(
                         "ACELERAÇÃO",
-                        "acel_x",
+                        "vel",
                         {
                           "title": "Aceleração X",
                           "value": "${bikeInfo["acel_x"]} m/s²"
@@ -99,8 +104,8 @@ class _RealTimeState extends State<RealTime> {
                           "title": "Aceleração Z",
                           "value": "${bikeInfo["acel_z"]} m/s²"
                         },
-                        chartDataAndController)),
-                Container(
+                        chartDataAndController, setState, toggleButtonsAccel)),
+                /*Container(
                     width: 480,
                     height: 380,
                     child: buildXYZCard(
@@ -128,10 +133,10 @@ class _RealTimeState extends State<RealTime> {
                         {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
                         {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
                         {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
-                        chartDataAndController)),
+                        chartDataAndController)),*/
               ],
             ),
-            Row(
+            /*Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Container(
@@ -183,7 +188,7 @@ class _RealTimeState extends State<RealTime> {
                         {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
                         chartDataAndController)),
               ],
-            )
+            )*/
           ],
         ));
   }
@@ -195,7 +200,9 @@ Widget buildXYZCard(
     Map<String, String> dataX,
     Map<String, String> dataY,
     Map<String, String> dataZ,
-    MapChartController _chartController) {
+    MapChartController _chartController,
+    Function setStateCallback,
+    List<bool> _toggleButtonsAccel) {
   return Card(
     color: Colors.black45,
     elevation: 10,
@@ -258,7 +265,7 @@ Widget buildXYZCard(
           SizedBox(
             height: 10,
           ),
-          buildXYZChart(cardTitle, mapVal, _chartController)
+          buildXYZChart(cardTitle, mapVal, _chartController, _toggleButtonsAccel, setStateCallback),
         ],
       ),
     ),
@@ -266,61 +273,120 @@ Widget buildXYZCard(
 }
 
 Widget buildXYZChart(
-    String title, String mapVal, MapChartController _chartController) {
+    String title, String mapVal, MapChartController _chartController, List<bool> _toggleButtonsAccel, Function setStateCallback) {
+
+  List<LineSeries<CartesianChartPoint, DateTime>> series = [];
+
+  List<Color> chartColors = [Colors.yellow[500]!, Colors.greenAccent, Colors.blue[500]!];
+
+  List<List<String>> nameXyz = [
+    ["acel_x", "acel_y", "acel_z"],
+    ["vel_x", "vel_y", "vel_z"],
+    ["roll", "pitch", "yaw"]
+  ];
+
+  List<String> currentNameXyz = [];
+
+  switch (mapVal) {
+    case "acel":
+      currentNameXyz = nameXyz[0];
+      break;
+    case "vel":
+      currentNameXyz = nameXyz[1];
+      break;
+    case "axis":
+      currentNameXyz = nameXyz[2];
+      break;
+  }
+
+  for (int i = 0 ; i < 3 ; i++) {
+    String dataName = currentNameXyz[i];
+    Color dataColor = chartColors[i];
+
+
+
+    if (_toggleButtonsAccel[i] == true) {
+      series.add(
+        LineSeries<CartesianChartPoint, DateTime>(
+            onRendererCreated: (ChartSeriesController controller) {
+              _chartController[dataName]?["controller"] = controller;
+            },
+            color: dataColor,
+            dataSource: _chartController[dataName]?["chartData"],
+            xValueMapper: (CartesianChartPoint point, _) => point.date,
+            yValueMapper: (CartesianChartPoint point, _) => point.value,
+            enableTooltip: true,
+            dataLabelSettings: DataLabelSettings(
+                isVisible: true,
+                color: dataColor,
+                borderRadius: 100,
+                textStyle: TextStyle(fontSize: 10))),
+      );
+    } else {
+      _chartController[dataName]?["controller"] = null;
+    }
+  }
+
   return Container(
     width: double.infinity,
     height: 250,
-    child: SfCartesianChart(
-        title: ChartTitle(
-          textStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 5,
-          ),
+    child: Column(
+      children: [
+        Container(
+          height: 200,
+          child: SfCartesianChart(
+              title: ChartTitle(
+                textStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 5,
+                ),
+              ),
+              enableAxisAnimation: true,
+              tooltipBehavior: TooltipBehavior(
+                color: Colors.deepOrange,
+                enable: true,
+                borderColor: Colors.deepOrange,
+                header: "",
+              ),
+              zoomPanBehavior: ZoomPanBehavior(
+                enablePanning: true,
+                enableMouseWheelZooming: true,
+                enablePinching: true,
+              ),
+              primaryXAxis: DateTimeAxis(
+                  majorGridLines: MajorGridLines(width: 0),
+                  labelStyle: TextStyle(
+                      color: Colors.white, fontSize: 4, fontWeight: FontWeight.w500),
+                  title: AxisTitle(
+                      text: "Tempo", textStyle: TextStyle(color: Colors.white))),
+              primaryYAxis: NumericAxis(
+                majorGridLines: MajorGridLines(width: 0),
+                labelStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 4,
+                  fontWeight: FontWeight.w500,
+                ),
+                title: AxisTitle(
+                    text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
+              ),
+              series: series),
         ),
-        enableAxisAnimation: true,
-        tooltipBehavior: TooltipBehavior(
-          color: Colors.deepOrange,
-          enable: true,
-          borderColor: Colors.deepOrange,
-          header: "",
+        ToggleButtons(
+          isSelected: _toggleButtonsAccel,
+          onPressed: (int index) {
+            setStateCallback(() {
+              _toggleButtonsAccel[index] = !_toggleButtonsAccel[index];
+            });
+          },
+          children: <Widget>[
+            Icon(MdiIcons.alphaX),
+            Icon(MdiIcons.alphaY),
+            Icon(MdiIcons.alphaZ),
+          ],
         ),
-        zoomPanBehavior: ZoomPanBehavior(
-          enablePanning: true,
-          enableMouseWheelZooming: true,
-          enablePinching: true,
-        ),
-        primaryXAxis: DateTimeAxis(
-            majorGridLines: MajorGridLines(width: 0),
-            labelStyle: TextStyle(
-                color: Colors.white, fontSize: 4, fontWeight: FontWeight.w500),
-            title: AxisTitle(
-                text: "Tempo", textStyle: TextStyle(color: Colors.white))),
-        primaryYAxis: NumericAxis(
-          majorGridLines: MajorGridLines(width: 0),
-          labelStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 4,
-            fontWeight: FontWeight.w500,
-          ),
-          title: AxisTitle(
-              text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
-        ),
-        series: <CartesianSeries>[
-          LineSeries<CartesianChartPoint, DateTime>(
-              onRendererCreated: (ChartSeriesController controller) {
-                _chartController[mapVal]?["controller"] = controller;
-              },
-              color: Colors.lightBlue.shade900,
-              dataSource: _chartController[mapVal]?["chartData"],
-              xValueMapper: (CartesianChartPoint point, _) => point.date,
-              yValueMapper: (CartesianChartPoint point, _) => point.value,
-              enableTooltip: true,
-              dataLabelSettings: DataLabelSettings(
-                  isVisible: true,
-                  color: Colors.lightBlue.shade700,
-                  borderRadius: 100,
-                  textStyle: TextStyle(fontSize: 10)))
-        ]),
+      ],
+
+    ),
   );
 }
 
