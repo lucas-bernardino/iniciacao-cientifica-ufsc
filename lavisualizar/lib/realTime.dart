@@ -36,10 +36,12 @@ class _RealTimeState extends State<RealTime> {
   */
   MapChartController chartDataAndController = initMapChartController();
 
-
   List<bool> toggleButtonsAccel = [false, false, false];
   List<bool> toggleButtonsVel = [false, false, false];
   List<bool> toggleButtonsAxis = [false, false, false];
+
+  List<bool> toggleButtonOneDimensionalVel = [true, false];
+  List<bool> toggleButtonOneDimensionalEsterc = [true, false];
 
   @override
   void dispose() {
@@ -57,7 +59,7 @@ class _RealTimeState extends State<RealTime> {
 
   initSocket() {
     String api_url_socket =
-        "https://zk60tuviqdrh.share.zrok.io"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
+        "http://localhost:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
     socket = IO.io(api_url_socket, <String, dynamic>{
       'autoConnect': false,
       'transports': ['websocket'],
@@ -70,13 +72,13 @@ class _RealTimeState extends State<RealTime> {
     socket.onConnectError((err) => print(err));
     socket.onError((err) => print(err));
     socket.on('send', (data) {
-        sleep(Duration(milliseconds: 500));
+      sleep(Duration(milliseconds: 500));
+      bikeInfo = jsonDecode(data);
+      updateBikeInfoList(bikeInfo, chartDataAndController);
+      setState(() {
         bikeInfo = jsonDecode(data);
-        updateBikeInfoList(bikeInfo, chartDataAndController);
-        setState(() {
-          bikeInfo = jsonDecode(data);
-          chartDataAndController = chartDataAndController;
-        });
+        chartDataAndController = chartDataAndController;
+      });
     });
   }
 
@@ -108,7 +110,9 @@ class _RealTimeState extends State<RealTime> {
                           "title": "Aceleração Z",
                           "value": "${bikeInfo["acel_z"]} m/s²"
                         },
-                        chartDataAndController, setState, toggleButtonsAccel)),
+                        chartDataAndController,
+                        setState,
+                        toggleButtonsAccel)),
                 Container(
                     width: 480,
                     height: 380,
@@ -127,7 +131,9 @@ class _RealTimeState extends State<RealTime> {
                           "title": "Velocidade Z",
                           "value": "${bikeInfo["vel_z"]} rad/s"
                         },
-                        chartDataAndController, setState, toggleButtonsVel)),
+                        chartDataAndController,
+                        setState,
+                        toggleButtonsVel)),
                 Container(
                     width: 480,
                     height: 380,
@@ -137,62 +143,35 @@ class _RealTimeState extends State<RealTime> {
                         {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
                         {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
                         {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
-                        chartDataAndController, setState, toggleButtonsAxis)),
+                        chartDataAndController,
+                        setState,
+                        toggleButtonsAxis)),
               ],
             ),
-            /*Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Container(
                     width: 480,
                     height: 380,
-                    child: buildXYZCard(
-                        "ACELERAÇÃO",
-                        "vel_x",
-                        {
-                          "title": "Aceleração X",
-                          "value": "${bikeInfo["acel_x"]} m/s²"
-                        },
-                        {
-                          "title": "Aceleração Y",
-                          "value": "${bikeInfo["acel_y"]} m/s²"
-                        },
-                        {
-                          "title": "Aceleração Z",
-                          "value": "${bikeInfo["acel_z"]} m/s²"
-                        },
-                        chartDataAndController)),
+                    child: buildOneDimensionalCard(
+                        "VELOCIDADE GPS",
+                        "veloc",
+                        {"title": "Velocidade GPS", "value": "${bikeInfo["veloc"]} º"},
+                        chartDataAndController, toggleButtonOneDimensionalVel, setState)),
                 Container(
                     width: 480,
                     height: 380,
-                    child: buildXYZCard(
-                        "VELOCIDADE",
-                        "vel_y",
-                        {
-                          "title": "Velocidade X",
-                          "value": "${bikeInfo["vel_x"]} rad/s"
-                        },
-                        {
-                          "title": "Velocidade Y",
-                          "value": "${bikeInfo["vel_y"]} rad/s"
-                        },
-                        {
-                          "title": "Velocidade Z",
-                          "value": "${bikeInfo["vel_z"]} rad/s"
-                        },
-                        chartDataAndController)),
-                Container(
-                    width: 480,
-                    height: 380,
-                    child: buildXYZCard(
-                        "EIXO",
-                        "vel_z",
-                        {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
-                        {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
-                        {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
-                        chartDataAndController)),
+                    child: Container(
+                        width: 480,
+                        height: 380,
+                        child: buildOneDimensionalCard(
+                            "ESTERÇAMENTO DO GUIDÃO",
+                            "esterc",
+                            {"title": "ESTERÇAMENTO", "value": "${bikeInfo["esterc"]} º"},
+                            chartDataAndController, toggleButtonOneDimensionalEsterc, setState)),)
               ],
-            )*/
+            )
           ],
         ));
   }
@@ -269,7 +248,60 @@ Widget buildXYZCard(
           SizedBox(
             height: 10,
           ),
-          buildXYZChart(cardTitle, mapVal, _chartController, _toggleButtonsAccel, setStateCallback),
+          buildXYZChart(cardTitle, mapVal, _chartController,
+              _toggleButtonsAccel, setStateCallback),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildOneDimensionalCard(
+    String cardTitle,
+    String mapVal,
+    Map<String, String> data,
+    MapChartController _chartController,
+    List<bool> _toggleButtons,
+    Function setStateCallback) {
+  return Card(
+    color: Colors.black45,
+    elevation: 10,
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          SizedBox(
+            child: Text(
+              cardTitle,
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    data["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    data["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          buildOneDimensionalChart(mapVal, _chartController, _toggleButtons, setStateCallback),
         ],
       ),
     ),
@@ -277,11 +309,18 @@ Widget buildXYZCard(
 }
 
 Widget buildXYZChart(
-    String title, String mapVal, MapChartController _chartController, List<bool> _toggleButtonsAccel, Function setStateCallback) {
-
+    String title,
+    String mapVal,
+    MapChartController _chartController,
+    List<bool> _toggleButtonsAccel,
+    Function setStateCallback) {
   List<LineSeries<CartesianChartPoint, DateTime>> series = [];
 
-  List<Color> chartColors = [Colors.yellow[500]!, Colors.greenAccent, Colors.blue[500]!];
+  List<Color> chartColors = [
+    Colors.yellow[500]!,
+    Colors.greenAccent,
+    Colors.blue[500]!
+  ];
 
   List<List<String>> nameXyz = [
     ["acel_x", "acel_y", "acel_z"],
@@ -303,7 +342,7 @@ Widget buildXYZChart(
       break;
   }
 
-  for (int i = 0 ; i < 3 ; i++) {
+  for (int i = 0; i < 3; i++) {
     String dataName = currentNameXyz[i];
     Color dataColor = chartColors[i];
 
@@ -358,9 +397,12 @@ Widget buildXYZChart(
               primaryXAxis: DateTimeAxis(
                   majorGridLines: MajorGridLines(width: 0),
                   labelStyle: TextStyle(
-                      color: Colors.white, fontSize: 4, fontWeight: FontWeight.w500),
+                      color: Colors.white,
+                      fontSize: 4,
+                      fontWeight: FontWeight.w500),
                   title: AxisTitle(
-                      text: "Tempo", textStyle: TextStyle(color: Colors.white))),
+                      text: "Tempo",
+                      textStyle: TextStyle(color: Colors.white))),
               primaryYAxis: NumericAxis(
                 majorGridLines: MajorGridLines(width: 0),
                 labelStyle: const TextStyle(
@@ -387,7 +429,95 @@ Widget buildXYZChart(
           ],
         ),
       ],
+    ),
+  );
+}
 
+Widget buildOneDimensionalChart(
+    String mapVal,
+    MapChartController _chartController,
+    List<bool> _toggleButton,
+    Function setStateCallback) {
+
+  bool isPlayIcon = _toggleButton[1];
+
+  return Container(
+    width: double.infinity,
+    height: 250,
+    child: Column(
+      children: [
+        isPlayIcon ? Container(
+          height: 200,
+          child: SfCartesianChart(
+            title: ChartTitle(
+              textStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 5,
+              ),
+            ),
+            enableAxisAnimation: true,
+            tooltipBehavior: TooltipBehavior(
+              color: Colors.deepOrange,
+              enable: true,
+              borderColor: Colors.deepOrange,
+              header: "",
+            ),
+            zoomPanBehavior: ZoomPanBehavior(
+              enablePanning: true,
+              enableMouseWheelZooming: true,
+              enablePinching: true,
+            ),
+            primaryXAxis: DateTimeAxis(
+                majorGridLines: MajorGridLines(width: 0),
+                labelStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 4,
+                    fontWeight: FontWeight.w500),
+                title: AxisTitle(
+                    text: "Tempo", textStyle: TextStyle(color: Colors.white))),
+            primaryYAxis: NumericAxis(
+              majorGridLines: MajorGridLines(width: 0),
+              labelStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 4,
+                fontWeight: FontWeight.w500,
+              ),
+              title: AxisTitle(
+                  text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
+            ),
+            series: [
+              LineSeries<CartesianChartPoint, DateTime>(
+                  onRendererCreated: (ChartSeriesController controller) {
+                    _chartController[mapVal]?["controller"] = controller;
+                  },
+                  color: Colors.green,
+                  dataSource: _chartController[mapVal]?["chartData"],
+                  xValueMapper: (CartesianChartPoint point, _) => point.date,
+                  yValueMapper: (CartesianChartPoint point, _) => point.value,
+                  enableTooltip: true,
+                  dataLabelSettings: DataLabelSettings(
+                      isVisible: true,
+                      color: Colors.green,
+                      borderRadius: 100,
+                      textStyle: TextStyle(fontSize: 10)))
+            ],
+          ),
+        ) : SizedBox(),
+        ToggleButtons(
+          isSelected: _toggleButton,
+          onPressed: (int index) {
+            setStateCallback(() {
+              for (int i = 0; i < _toggleButton.length; i++) {
+                _toggleButton[i] = i == index;
+              }
+            });
+          },
+          children: <Widget>[
+            Icon(Icons.close),
+            Icon(Icons.play_arrow_rounded),
+          ],
+        ),
+      ],
     ),
   );
 }
