@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class _RealTimeState extends State<RealTime> {
 
   initSocket() {
     String api_url_socket =
-        "http://127.0.0.1:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
+        "https://zk60tuviqdrh.share.zrok.io"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
     socket = IO.io(api_url_socket, <String, dynamic>{
       'autoConnect': false,
       'transports': ['websocket'],
@@ -69,12 +70,13 @@ class _RealTimeState extends State<RealTime> {
     socket.onConnectError((err) => print(err));
     socket.onError((err) => print(err));
     socket.on('send', (data) {
-      bikeInfo = jsonDecode(data);
-      updateBikeInfoList(bikeInfo, chartDataAndController);
-      setState(() {
+        sleep(Duration(milliseconds: 500));
         bikeInfo = jsonDecode(data);
-        chartDataAndController = chartDataAndController;
-      });
+        updateBikeInfoList(bikeInfo, chartDataAndController);
+        setState(() {
+          bikeInfo = jsonDecode(data);
+          chartDataAndController = chartDataAndController;
+        });
     });
   }
 
