@@ -14,6 +14,12 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int _selectedIndex = 0;
 
+  final List<Widget> _pages = const [
+    Chart(),
+    Comparison(),
+    RealTime(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,10 +64,8 @@ class _HomeState extends State<Home> {
           ),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
-              child: IndexedStack(
-            index: _selectedIndex,
-            children: const [Chart(), Comparison(), RealTime()],
-          ))
+              child: _pages[_selectedIndex]
+          )
         ],
       ),
     );

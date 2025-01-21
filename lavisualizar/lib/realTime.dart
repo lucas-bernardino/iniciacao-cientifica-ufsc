@@ -46,10 +46,10 @@ class _RealTimeState extends State<RealTime> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     socket.disconnect();
     socket.dispose();
     super.dispose();
+    _timer?.cancel();
   }
 
   @override
