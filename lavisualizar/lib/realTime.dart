@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +11,8 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+import 'package:dio/dio.dart';
 
 typedef MapChartController = Map<String, Map<String, dynamic>>;
 
@@ -58,10 +61,9 @@ class _RealTimeState extends State<RealTime> {
     initSocket();
   }
 
+  String API_URL = "http://localhost:3001";
   initSocket() {
-    String api_url_socket =
-        "http://localhost:3001"; // IF IT'S IN LOCALHOST, PLEASE CHANGE IT TO 'http' INSTEAD OF 'https'
-    socket = IO.io(api_url_socket, <String, dynamic>{
+    socket = IO.io(API_URL, <String, dynamic>{
       'autoConnect': false,
       'transports': ['websocket'],
     });
@@ -148,6 +150,18 @@ class _RealTimeState extends State<RealTime> {
                         setState,
                         toggleButtonsAxis)),
               ],
+            ),
+            ElevatedButton(
+                onPressed: () async {await downloadCsv(API_URL);},
+                child: Text("Download CSV", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                    if (states.contains(WidgetState.hovered)) {
+                      return Colors.lightBlue;
+                    }
+                    return Colors.lightBlueAccent;
+                  }),
+                ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -627,6 +641,34 @@ Widget buildGPSChart(MapChartController _chartController, List<bool> _toggleButt
       ],
     ),
   );
+}
+
+Future<void> downloadCsv(String URL) async{
+  final URL = "http://localhost:3001";
+  final dio = Dio();
+
+  final rs = await dio.get(
+    "${URL}/download",
+    options: Options(responseType: ResponseType.stream),
+  );
+
+  DateTime currentTime = DateTime.now();
+
+  String? outputFileName = await FilePicker.platform.saveFile(
+    dialogTitle: 'Please select an output file:',
+    fileName: 'dados${currentTime.toString().replaceAll(":", "-").replaceAll(" ", "_")}.csv',
+  );
+
+  if (outputFileName != null) {
+    final file = File(outputFileName);
+    final fileStream = file.openWrite();
+
+    await for (final chunk in rs.data.stream) {
+      fileStream.add(chunk);
+    }
+
+    await fileStream.close();
+  }
 }
 
 void updateBikeInfoList(
