@@ -3,6 +3,7 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const { Sensor, sensorSchema } = require("./models/sensorModel");
+const pl = require('nodejs-polars'); 
 require('dotenv').config()
 
 app.use(express.json());
@@ -159,6 +160,40 @@ app.post("/collectiondata", async (req, res) => {
     const collection = mongoose.connection.db.collection(collectionName);
     const collectionData = await collection.find({}).toArray();
     res.status(200).json(collectionData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+app.get("/download", async (req, res) => {
+  try {
+
+    let collectionName = "";
+
+    if (req.query.collection == "last" || req.query.collection == undefined) {
+      collectionName = (await mongoose.connection.db.listCollections().toArray()).pop().name;
+    } else {
+      collectionName = req.query.collection;
+    }
+
+    const collection = mongoose.connection.db.collection(collectionName);
+    const collectionData = await collection.find({}).toArray();
+
+    for (const doc of collectionData) {
+      delete doc._id;
+      delete doc.createdAt;
+      delete doc.updatedAt;
+      delete doc.__v;
+    }
+
+    const df = pl.DataFrame(collectionData);
+    const csvData = df.toCSV();
+
+    res.setHeader("Content-Disposition", 'attachment; filename="data.csv"');
+    res.setHeader("Content-Type", "text/csv");
+
+    res.status(200).send(csvData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
