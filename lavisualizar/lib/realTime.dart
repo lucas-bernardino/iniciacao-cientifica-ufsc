@@ -42,6 +42,7 @@ class _RealTimeState extends State<RealTime> {
 
   List<bool> toggleButtonOneDimensionalVel = [true, false];
   List<bool> toggleButtonOneDimensionalEsterc = [true, false];
+  List<bool> toggleButtonGPS = [true, false];
 
   @override
   void dispose() {
@@ -162,14 +163,16 @@ class _RealTimeState extends State<RealTime> {
                 Container(
                     width: 480,
                     height: 380,
-                    child: Container(
-                        width: 480,
-                        height: 380,
-                        child: buildOneDimensionalCard(
-                            "ESTERÇAMENTO DO GUIDÃO",
-                            "esterc",
-                            {"title": "ESTERÇAMENTO", "value": "${bikeInfo["esterc"]} º"},
-                            chartDataAndController, toggleButtonOneDimensionalEsterc, setState)),)
+                    child: buildOneDimensionalCard(
+                        "ESTERÇAMENTO DO GUIDÃO",
+                        "esterc",
+                        {"title": "ESTERÇAMENTO", "value": "${bikeInfo["esterc"]} º"},
+                        chartDataAndController, toggleButtonOneDimensionalEsterc, setState),),
+              Container(
+                width: 480,
+                height: 380,
+                child: buildGPSCard(chartDataAndController, toggleButtonGPS, setState),
+              )
               ],
             )
           ],
@@ -522,15 +525,124 @@ Widget buildOneDimensionalChart(
   );
 }
 
+Widget buildGPSCard(MapChartController _chartController, List<bool> _toggleButtons, Function setStateCallback) {
+  return Card(
+    color: Colors.black45,
+    elevation: 10,
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          SizedBox(
+            child: Text(
+              "LOCALIZAÇÃO POR GPS",
+              style:
+              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          buildGPSChart(_chartController, _toggleButtons, setStateCallback),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildGPSChart(MapChartController _chartController, List<bool> _toggleButton, Function setStateCallback) {
+
+  bool isPlayIcon = _toggleButton[1];
+  return Container(
+    width: double.infinity,
+    height: 250,
+    child: Column(
+      children: [
+        isPlayIcon ? Container(
+          height: 200,
+          child: SfCartesianChart(
+            title: ChartTitle(
+              textStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 5,
+              ),
+            ),
+            enableAxisAnimation: true,
+            tooltipBehavior: TooltipBehavior(
+              color: Colors.deepOrange,
+              enable: true,
+              borderColor: Colors.deepOrange,
+              header: "",
+            ),
+            zoomPanBehavior: ZoomPanBehavior(
+              enablePanning: true,
+              enableMouseWheelZooming: true,
+              enablePinching: true,
+            ),
+            primaryXAxis: NumericAxis(
+                majorGridLines: MajorGridLines(width: 0),
+                labelStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 4,
+                    fontWeight: FontWeight.w500),
+                title: AxisTitle(
+                    text: "Latitude", textStyle: TextStyle(color: Colors.white))),
+            primaryYAxis: NumericAxis(
+              majorGridLines: MajorGridLines(width: 0),
+              labelStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 4,
+                fontWeight: FontWeight.w500,
+              ),
+              title: AxisTitle(
+                  text: "Longitude", textStyle: TextStyle(color: Colors.white)),
+            ),
+            series: [
+              LineSeries<GPSChartPoint, num>(
+                  onRendererCreated: (ChartSeriesController controller) {
+                    _chartController["gps"]?["controller"] = controller;
+                  },
+                  color: Colors.green,
+                  dataSource: _chartController["gps"]?["chartData"],
+                  xValueMapper: (GPSChartPoint point, _) => point.lat,
+                  yValueMapper: (GPSChartPoint point, _) => point.long,
+                  enableTooltip: true,)
+            ],
+          ),
+        ) : SizedBox(),
+        ToggleButtons(
+          isSelected: _toggleButton,
+          onPressed: (int index) {
+            setStateCallback(() {
+              for (int i = 0; i < _toggleButton.length; i++) {
+                _toggleButton[i] = i == index;
+              }
+            });
+          },
+          children: <Widget>[
+            Icon(Icons.close),
+            Icon(Icons.play_arrow_rounded),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 void updateBikeInfoList(
     Map<String, dynamic> _bikeInfo, MapChartController _chartController) async {
   DateTime currentTime = DateTime.now();
 
   _chartController.forEach((key, subMap) {
-    var value =
-        _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
 
-    subMap["chartData"].add(CartesianChartPoint(currentTime, value));
+    if (key == "gps" ) {
+      num latitude = _bikeInfo["lat"] is num ? _bikeInfo["lat"] : num.parse(_bikeInfo["lat"]);
+      num longitude = _bikeInfo["long"] is num ? _bikeInfo["long"] : num.parse(_bikeInfo["long"]);
+      subMap["chartData"].add(GPSChartPoint(latitude, longitude));
+    } else {
+      var value = _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
+      subMap["chartData"].add(CartesianChartPoint(currentTime, value));
+    }
 
     if (subMap["chartData"].length == 30) {
       subMap["chartData"].removeAt(0);
@@ -608,17 +720,13 @@ MapChartController initMapChartController() {
       "controller": null,
       "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
-    "long": {
-      "controller": null,
-      "chartData": List<CartesianChartPoint>.empty(growable: true)
-    },
-    "lat": {
-      "controller": null,
-      "chartData": List<CartesianChartPoint>.empty(growable: true)
-    },
     "veloc": {
       "controller": null,
       "chartData": List<CartesianChartPoint>.empty(growable: true)
+    },
+    "gps": {
+      "controller": null,
+      "chartData": List<GPSChartPoint>.empty(growable: true)
     },
   };
   return newMap;
@@ -629,4 +737,11 @@ class CartesianChartPoint {
 
   final DateTime date;
   final num value;
+}
+
+class GPSChartPoint {
+  GPSChartPoint(this.lat, this.long);
+
+  final num lat;
+  final num long;
 }
