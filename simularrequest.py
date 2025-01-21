@@ -22,8 +22,8 @@ dados_package = {
   "esterc": '121.488',
   "rot": '999',
   "veloc": "0",
-  "long": "0",
-  "lat": "0",
+  "long": 0,
+  "lat": 0,
   "press_ar": "0.9970984455958549",
   "altitude": "420",
 }
@@ -62,6 +62,9 @@ def send_data_package():
     dados_package["vel_x"]+=i+1
     dados_package["vel_y"]+=i+2
     dados_package["vel_z"]+=i+3
+    
+    dados_package["lat"]+=i
+    dados_package["long"]+=i
     i+=1
 
 while True:
