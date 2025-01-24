@@ -240,7 +240,7 @@ def angle_thread():
                         "mag_y": mag_y,
                         "mag_z": mag_z,
                         "temp": temp,
-                        "esterc": 33,
+                        "esterc": angle_degrees,
                         "rot": "{:.2f}".format(rpm),
                         "veloc": velocidade_gps,
                         "long": longitude,
