@@ -182,7 +182,7 @@ app.get("/download", async (req, res) => {
 
     for (const doc of collectionData) {
       delete doc._id;
-      delete doc.createdAt;
+      doc["createdAt"] = String(doc["createdAt"])
       delete doc.updatedAt;
       delete doc.__v;
     }
