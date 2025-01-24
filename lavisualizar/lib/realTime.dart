@@ -47,6 +47,8 @@ class _RealTimeState extends State<RealTime> {
   List<bool> toggleButtonOneDimensionalEsterc = [true, false];
   List<bool> toggleButtonGPS = [true, false];
 
+  bool timerSocketFlag = false;
+
   @override
   void dispose() {
     socket.disconnect();
@@ -59,9 +61,14 @@ class _RealTimeState extends State<RealTime> {
   void initState() {
     super.initState();
     initSocket();
+    Timer.periodic(Duration(milliseconds: 200), (timer) {
+      setState(() {
+        timerSocketFlag = true;
+      });
+    });
   }
 
-  String API_URL = "http://localhost:3001";
+  String API_URL = "https://xekt8prq8l8h.share.zrok.io";
   initSocket() {
     socket = IO.io(API_URL, <String, dynamic>{
       'autoConnect': false,
@@ -75,13 +82,15 @@ class _RealTimeState extends State<RealTime> {
     socket.onConnectError((err) => print(err));
     socket.onError((err) => print(err));
     socket.on('send', (data) {
-      sleep(Duration(milliseconds: 500));
-      bikeInfo = jsonDecode(data);
-      updateBikeInfoList(bikeInfo, chartDataAndController);
-      setState(() {
+      if (timerSocketFlag) {
         bikeInfo = jsonDecode(data);
-        chartDataAndController = chartDataAndController;
-      });
+        updateBikeInfoList(bikeInfo, chartDataAndController);
+        setState(() {
+          bikeInfo = jsonDecode(data);
+          chartDataAndController = chartDataAndController;
+          timerSocketFlag = false;
+        });
+      }
     });
   }
 
@@ -644,7 +653,6 @@ Widget buildGPSChart(MapChartController _chartController, List<bool> _toggleButt
 }
 
 Future<void> downloadCsv(String URL) async{
-  final URL = "http://localhost:3001";
   final dio = Dio();
 
   final rs = await dio.get(
