@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -49,6 +50,9 @@ class _RealTimeState extends State<RealTime> {
 
   bool timerSocketFlag = false;
 
+  bool isShowingDatabase = false;
+  List<DropdownMenuEntry> dropdownList = [];
+
   @override
   void dispose() {
     socket.disconnect();
@@ -68,7 +72,7 @@ class _RealTimeState extends State<RealTime> {
     });
   }
 
-  String API_URL = "https://xekt8prq8l8h.share.zrok.io";
+  String API_URL = "http://localhost:3001";
   initSocket() {
     socket = IO.io(API_URL, <String, dynamic>{
       'autoConnect': false,
@@ -160,17 +164,68 @@ class _RealTimeState extends State<RealTime> {
                         toggleButtonsAxis)),
               ],
             ),
-            ElevatedButton(
-                onPressed: () async {await downloadCsv(API_URL);},
-                child: Text("Download CSV", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                    if (states.contains(WidgetState.hovered)) {
-                      return Colors.lightBlue;
-                    }
-                    return Colors.lightBlueAccent;
-                  }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    await downloadCsv(API_URL);
+                  },
+                  child: Text(
+                    "Download CSV",
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return Colors.lightBlue;
+                      }
+                      return Colors.lightBlueAccent;
+                    }),
+                  ),
                 ),
+                SizedBox(width: 10),
+                Container(
+                  width: 200,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        child: IconButton(
+                          onPressed: () async {
+                            List<String> tmpString = await getListCollectionsContinuous(API_URL);
+                            List<DropdownMenuEntry> tmpDropdown = [];
+                            for (var name in tmpString) {
+                              tmpDropdown.add(DropdownMenuEntry(value: name, label: name));
+                            }
+                            setState(() {
+                              dropdownList = tmpDropdown;
+                              isShowingDatabase = !isShowingDatabase;
+                            });
+                          },
+                          icon: Icon(MdiIcons.database),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                              if (states.contains(WidgetState.hovered)) {
+                                return Colors.lightBlue;
+                              }
+                              return Colors.lightBlueAccent;
+                            }),
+                          ),
+                        ),
+                      ),
+                      if (isShowingDatabase)
+                        Positioned(
+                          left: 50,
+                          child: DropdownMenu(
+                            menuHeight: 200,
+                            dropdownMenuEntries: dropdownList,
+                            textStyle: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -706,6 +761,18 @@ void updateBikeInfoList(
       );
     }
   });
+}
+
+Future<List<String>> getListCollectionsContinuous(String url) async {
+  final response = await http.get(Uri.parse('$url/collections'));
+  final response_json = json.decode(response.body);
+  List<String> collectionNames = [];
+  var collections = response_json["collectionNames"];
+  for (var collection in collections) {
+    collectionNames.add(collection);
+  }
+  collectionNames.sort();
+  return collectionNames;
 }
 
 Map<String, dynamic> initMap() {
