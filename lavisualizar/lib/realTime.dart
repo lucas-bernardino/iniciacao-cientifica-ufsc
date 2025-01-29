@@ -618,11 +618,7 @@ Widget buildOneDimensionalChart(
                         yValueMapper: (CartesianChartPoint point, _) =>
                             point.value,
                         enableTooltip: true,
-                        dataLabelSettings: DataLabelSettings(
-                            isVisible: true,
-                            color: Colors.green,
-                            borderRadius: 100,
-                            textStyle: TextStyle(fontSize: 10)))
+                        )
                   ],
                 ),
               )
@@ -806,7 +802,7 @@ void updateBikeInfoList(
       subMap["chartData"].add(CartesianChartPoint(currentTime, value));
     }
 
-    if (subMap["chartData"].length == 30) {
+    if (subMap["chartData"].length == 100) {
       subMap["chartData"].removeAt(0);
       subMap["controller"]?.updateDataSource(
         addedDataIndexes: <int>[subMap["chartData"].length - 1],
@@ -837,7 +833,6 @@ Future<void> deleteCollectionByName(String url, String collectionName) async {
   final bodyRequest = json.encode(bodyAsMap);
   final response = await http.post(Uri.parse('$url/delete'),
       headers: {"Content-Type": "application/json"}, body: bodyRequest);
-  print("Response: ${response.statusCode}:${response.body}");
 }
 
 Map<String, dynamic> initMap() {
