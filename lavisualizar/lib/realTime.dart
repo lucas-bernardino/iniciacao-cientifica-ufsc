@@ -171,7 +171,7 @@ class _RealTimeState extends State<RealTime> {
               children: [
                 ElevatedButton(
                   onPressed: () async {
-                    await downloadCsv(API_URL);
+                    await downloadCsv(API_URL, "last");
                   },
                   child: Text(
                     "Download CSV",
@@ -211,7 +211,10 @@ class _RealTimeState extends State<RealTime> {
                               )),
                           trailingIcon: IconButton(
                               onPressed: () {
-                                print('a');
+                                downloadCsv(API_URL, name);
+                                setState(() {
+                                  isShowingDatabase = !isShowingDatabase;
+                                });
                               },
                               icon: Icon(
                                 Icons.download,
@@ -757,12 +760,15 @@ Widget buildGPSChart(MapChartController _chartController,
   );
 }
 
-Future<void> downloadCsv(String URL) async {
+Future<void> downloadCsv(String URL, String queryString) async {
   final dio = Dio();
 
   final rs = await dio.get(
     "${URL}/download",
     options: Options(responseType: ResponseType.stream),
+    queryParameters: {
+      "collection": queryString
+    }
   );
 
   DateTime currentTime = DateTime.now();
