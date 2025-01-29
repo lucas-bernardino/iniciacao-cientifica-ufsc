@@ -73,6 +73,7 @@ class _RealTimeState extends State<RealTime> {
   }
 
   String API_URL = "http://localhost:3001";
+
   initSocket() {
     socket = IO.io(API_URL, <String, dynamic>{
       'autoConnect': false,
@@ -173,10 +174,12 @@ class _RealTimeState extends State<RealTime> {
                   },
                   child: Text(
                     "Download CSV",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                   style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
                       if (states.contains(WidgetState.hovered)) {
                         return Colors.lightBlue;
                       }
@@ -185,46 +188,55 @@ class _RealTimeState extends State<RealTime> {
                   ),
                 ),
                 SizedBox(width: 10),
-                Container(
-                  width: 200,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        child: IconButton(
-                          onPressed: () async {
-                            List<String> tmpString = await getListCollectionsContinuous(API_URL);
-                            List<DropdownMenuEntry> tmpDropdown = [];
-                            for (var name in tmpString) {
-                              tmpDropdown.add(DropdownMenuEntry(value: name, label: name));
-                            }
-                            setState(() {
-                              dropdownList = tmpDropdown;
-                              isShowingDatabase = !isShowingDatabase;
-                            });
-                          },
-                          icon: Icon(MdiIcons.database),
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                              if (states.contains(WidgetState.hovered)) {
-                                return Colors.lightBlue;
-                              }
-                              return Colors.lightBlueAccent;
-                            }),
-                          ),
-                        ),
-                      ),
-                      if (isShowingDatabase)
-                        Positioned(
-                          left: 50,
-                          child: DropdownMenu(
-                            menuHeight: 200,
-                            dropdownMenuEntries: dropdownList,
-                            textStyle: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                    ],
+                IconButton(
+                  onPressed: () async {
+                    List<String> tmpString =
+                        await getListCollectionsContinuous(API_URL);
+                    List<DropdownMenuEntry> tmpDropdown = [];
+                    for (var name in tmpString) {
+                      tmpDropdown.add(DropdownMenuEntry(
+                          value: name,
+                          label: name,
+                          leadingIcon: IconButton(
+                              onPressed: () => print("Deleting..."),
+                              icon: Icon(Icons.delete, color: Colors.blue,)),
+                          trailingIcon: IconButton(
+                              onPressed: () => print("Downloading..."),
+                              icon: Icon(Icons.download, color: Colors.blue,))));
+                    }
+                    setState(() {
+                      dropdownList = tmpDropdown;
+                      isShowingDatabase = !isShowingDatabase;
+                    });
+                  },
+                  icon: Icon(MdiIcons.database),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return Colors.lightBlue;
+                      }
+                      return Colors.lightBlueAccent;
+                    }),
                   ),
                 ),
+                SizedBox(
+                  width: 10,
+                ),
+                if (isShowingDatabase)
+                  DropdownMenu(
+                    inputDecorationTheme: InputDecorationTheme(
+                        isDense: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        constraints:
+                            BoxConstraints.tight(const Size.fromHeight(40)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        )),
+                    dropdownMenuEntries: dropdownList,
+                    textStyle: TextStyle(color: Colors.white),
+                  ),
               ],
             ),
             Row(
@@ -236,21 +248,33 @@ class _RealTimeState extends State<RealTime> {
                     child: buildOneDimensionalCard(
                         "VELOCIDADE GPS",
                         "veloc",
-                        {"title": "Velocidade GPS", "value": "${bikeInfo["veloc"]} º"},
-                        chartDataAndController, toggleButtonOneDimensionalVel, setState)),
+                        {
+                          "title": "Velocidade GPS",
+                          "value": "${bikeInfo["veloc"]} º"
+                        },
+                        chartDataAndController,
+                        toggleButtonOneDimensionalVel,
+                        setState)),
                 Container(
-                    width: 480,
-                    height: 380,
-                    child: buildOneDimensionalCard(
-                        "ESTERÇAMENTO DO GUIDÃO",
-                        "esterc",
-                        {"title": "ESTERÇAMENTO", "value": "${bikeInfo["esterc"]} º"},
-                        chartDataAndController, toggleButtonOneDimensionalEsterc, setState),),
-              Container(
-                width: 480,
-                height: 380,
-                child: buildGPSCard(chartDataAndController, toggleButtonGPS, setState),
-              )
+                  width: 480,
+                  height: 380,
+                  child: buildOneDimensionalCard(
+                      "ESTERÇAMENTO DO GUIDÃO",
+                      "esterc",
+                      {
+                        "title": "ESTERÇAMENTO",
+                        "value": "${bikeInfo["esterc"]} º"
+                      },
+                      chartDataAndController,
+                      toggleButtonOneDimensionalEsterc,
+                      setState),
+                ),
+                Container(
+                  width: 480,
+                  height: 380,
+                  child: buildGPSCard(
+                      chartDataAndController, toggleButtonGPS, setState),
+                )
               ],
             )
           ],
@@ -382,7 +406,8 @@ Widget buildOneDimensionalCard(
           SizedBox(
             height: 10,
           ),
-          buildOneDimensionalChart(mapVal, _chartController, _toggleButtons, setStateCallback),
+          buildOneDimensionalChart(
+              mapVal, _chartController, _toggleButtons, setStateCallback),
         ],
       ),
     ),
@@ -519,7 +544,6 @@ Widget buildOneDimensionalChart(
     MapChartController _chartController,
     List<bool> _toggleButton,
     Function setStateCallback) {
-
   bool isPlayIcon = _toggleButton[1];
 
   return Container(
@@ -527,63 +551,69 @@ Widget buildOneDimensionalChart(
     height: 250,
     child: Column(
       children: [
-        isPlayIcon ? Container(
-          height: 200,
-          child: SfCartesianChart(
-            title: ChartTitle(
-              textStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 5,
-              ),
-            ),
-            enableAxisAnimation: true,
-            tooltipBehavior: TooltipBehavior(
-              color: Colors.deepOrange,
-              enable: true,
-              borderColor: Colors.deepOrange,
-              header: "",
-            ),
-            zoomPanBehavior: ZoomPanBehavior(
-              enablePanning: true,
-              enableMouseWheelZooming: true,
-              enablePinching: true,
-            ),
-            primaryXAxis: DateTimeAxis(
-                majorGridLines: MajorGridLines(width: 0),
-                labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 4,
-                    fontWeight: FontWeight.w500),
-                title: AxisTitle(
-                    text: "Tempo", textStyle: TextStyle(color: Colors.white))),
-            primaryYAxis: NumericAxis(
-              majorGridLines: MajorGridLines(width: 0),
-              labelStyle: const TextStyle(
-                color: Colors.white,
-                fontSize: 4,
-                fontWeight: FontWeight.w500,
-              ),
-              title: AxisTitle(
-                  text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
-            ),
-            series: [
-              LineSeries<CartesianChartPoint, DateTime>(
-                  onRendererCreated: (ChartSeriesController controller) {
-                    _chartController[mapVal]?["controller"] = controller;
-                  },
-                  color: Colors.green,
-                  dataSource: _chartController[mapVal]?["chartData"],
-                  xValueMapper: (CartesianChartPoint point, _) => point.date,
-                  yValueMapper: (CartesianChartPoint point, _) => point.value,
-                  enableTooltip: true,
-                  dataLabelSettings: DataLabelSettings(
-                      isVisible: true,
-                      color: Colors.green,
-                      borderRadius: 100,
-                      textStyle: TextStyle(fontSize: 10)))
-            ],
-          ),
-        ) : SizedBox(),
+        isPlayIcon
+            ? Container(
+                height: 200,
+                child: SfCartesianChart(
+                  title: ChartTitle(
+                    textStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 5,
+                    ),
+                  ),
+                  enableAxisAnimation: true,
+                  tooltipBehavior: TooltipBehavior(
+                    color: Colors.deepOrange,
+                    enable: true,
+                    borderColor: Colors.deepOrange,
+                    header: "",
+                  ),
+                  zoomPanBehavior: ZoomPanBehavior(
+                    enablePanning: true,
+                    enableMouseWheelZooming: true,
+                    enablePinching: true,
+                  ),
+                  primaryXAxis: DateTimeAxis(
+                      majorGridLines: MajorGridLines(width: 0),
+                      labelStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: 4,
+                          fontWeight: FontWeight.w500),
+                      title: AxisTitle(
+                          text: "Tempo",
+                          textStyle: TextStyle(color: Colors.white))),
+                  primaryYAxis: NumericAxis(
+                    majorGridLines: MajorGridLines(width: 0),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    title: AxisTitle(
+                        text: "$mapVal",
+                        textStyle: TextStyle(color: Colors.white)),
+                  ),
+                  series: [
+                    LineSeries<CartesianChartPoint, DateTime>(
+                        onRendererCreated: (ChartSeriesController controller) {
+                          _chartController[mapVal]?["controller"] = controller;
+                        },
+                        color: Colors.green,
+                        dataSource: _chartController[mapVal]?["chartData"],
+                        xValueMapper: (CartesianChartPoint point, _) =>
+                            point.date,
+                        yValueMapper: (CartesianChartPoint point, _) =>
+                            point.value,
+                        enableTooltip: true,
+                        dataLabelSettings: DataLabelSettings(
+                            isVisible: true,
+                            color: Colors.green,
+                            borderRadius: 100,
+                            textStyle: TextStyle(fontSize: 10)))
+                  ],
+                ),
+              )
+            : SizedBox(),
         ToggleButtons(
           isSelected: _toggleButton,
           onPressed: (int index) {
@@ -603,7 +633,8 @@ Widget buildOneDimensionalChart(
   );
 }
 
-Widget buildGPSCard(MapChartController _chartController, List<bool> _toggleButtons, Function setStateCallback) {
+Widget buildGPSCard(MapChartController _chartController,
+    List<bool> _toggleButtons, Function setStateCallback) {
   return Card(
     color: Colors.black45,
     elevation: 10,
@@ -615,7 +646,7 @@ Widget buildGPSCard(MapChartController _chartController, List<bool> _toggleButto
             child: Text(
               "LOCALIZAÇÃO POR GPS",
               style:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
           SizedBox(
@@ -628,66 +659,71 @@ Widget buildGPSCard(MapChartController _chartController, List<bool> _toggleButto
   );
 }
 
-Widget buildGPSChart(MapChartController _chartController, List<bool> _toggleButton, Function setStateCallback) {
-
+Widget buildGPSChart(MapChartController _chartController,
+    List<bool> _toggleButton, Function setStateCallback) {
   bool isPlayIcon = _toggleButton[1];
   return Container(
     width: double.infinity,
     height: 250,
     child: Column(
       children: [
-        isPlayIcon ? Container(
-          height: 200,
-          child: SfCartesianChart(
-            title: ChartTitle(
-              textStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 5,
-              ),
-            ),
-            enableAxisAnimation: true,
-            tooltipBehavior: TooltipBehavior(
-              color: Colors.deepOrange,
-              enable: true,
-              borderColor: Colors.deepOrange,
-              header: "",
-            ),
-            zoomPanBehavior: ZoomPanBehavior(
-              enablePanning: true,
-              enableMouseWheelZooming: true,
-              enablePinching: true,
-            ),
-            primaryXAxis: NumericAxis(
-                majorGridLines: MajorGridLines(width: 0),
-                labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 4,
-                    fontWeight: FontWeight.w500),
-                title: AxisTitle(
-                    text: "Latitude", textStyle: TextStyle(color: Colors.white))),
-            primaryYAxis: NumericAxis(
-              majorGridLines: MajorGridLines(width: 0),
-              labelStyle: const TextStyle(
-                color: Colors.white,
-                fontSize: 4,
-                fontWeight: FontWeight.w500,
-              ),
-              title: AxisTitle(
-                  text: "Longitude", textStyle: TextStyle(color: Colors.white)),
-            ),
-            series: [
-              LineSeries<GPSChartPoint, num>(
-                  onRendererCreated: (ChartSeriesController controller) {
-                    _chartController["gps"]?["controller"] = controller;
-                  },
-                  color: Colors.green,
-                  dataSource: _chartController["gps"]?["chartData"],
-                  xValueMapper: (GPSChartPoint point, _) => point.lat,
-                  yValueMapper: (GPSChartPoint point, _) => point.long,
-                  enableTooltip: true,)
-            ],
-          ),
-        ) : SizedBox(),
+        isPlayIcon
+            ? Container(
+                height: 200,
+                child: SfCartesianChart(
+                  title: ChartTitle(
+                    textStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 5,
+                    ),
+                  ),
+                  enableAxisAnimation: true,
+                  tooltipBehavior: TooltipBehavior(
+                    color: Colors.deepOrange,
+                    enable: true,
+                    borderColor: Colors.deepOrange,
+                    header: "",
+                  ),
+                  zoomPanBehavior: ZoomPanBehavior(
+                    enablePanning: true,
+                    enableMouseWheelZooming: true,
+                    enablePinching: true,
+                  ),
+                  primaryXAxis: NumericAxis(
+                      majorGridLines: MajorGridLines(width: 0),
+                      labelStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: 4,
+                          fontWeight: FontWeight.w500),
+                      title: AxisTitle(
+                          text: "Latitude",
+                          textStyle: TextStyle(color: Colors.white))),
+                  primaryYAxis: NumericAxis(
+                    majorGridLines: MajorGridLines(width: 0),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    title: AxisTitle(
+                        text: "Longitude",
+                        textStyle: TextStyle(color: Colors.white)),
+                  ),
+                  series: [
+                    LineSeries<GPSChartPoint, num>(
+                      onRendererCreated: (ChartSeriesController controller) {
+                        _chartController["gps"]?["controller"] = controller;
+                      },
+                      color: Colors.green,
+                      dataSource: _chartController["gps"]?["chartData"],
+                      xValueMapper: (GPSChartPoint point, _) => point.lat,
+                      yValueMapper: (GPSChartPoint point, _) => point.long,
+                      enableTooltip: true,
+                    )
+                  ],
+                ),
+              )
+            : SizedBox(),
         ToggleButtons(
           isSelected: _toggleButton,
           onPressed: (int index) {
@@ -707,7 +743,7 @@ Widget buildGPSChart(MapChartController _chartController, List<bool> _toggleButt
   );
 }
 
-Future<void> downloadCsv(String URL) async{
+Future<void> downloadCsv(String URL) async {
   final dio = Dio();
 
   final rs = await dio.get(
@@ -719,7 +755,8 @@ Future<void> downloadCsv(String URL) async{
 
   String? outputFileName = await FilePicker.platform.saveFile(
     dialogTitle: 'Please select an output file:',
-    fileName: 'dados${currentTime.toString().replaceAll(":", "-").replaceAll(" ", "_")}.csv',
+    fileName:
+        'dados${currentTime.toString().replaceAll(":", "-").replaceAll(" ", "_")}.csv',
   );
 
   if (outputFileName != null) {
@@ -739,13 +776,17 @@ void updateBikeInfoList(
   DateTime currentTime = DateTime.now();
 
   _chartController.forEach((key, subMap) {
-
-    if (key == "gps" ) {
-      num latitude = _bikeInfo["lat"] is num ? _bikeInfo["lat"] : num.parse(_bikeInfo["lat"]);
-      num longitude = _bikeInfo["long"] is num ? _bikeInfo["long"] : num.parse(_bikeInfo["long"]);
+    if (key == "gps") {
+      num latitude = _bikeInfo["lat"] is num
+          ? _bikeInfo["lat"]
+          : num.parse(_bikeInfo["lat"]);
+      num longitude = _bikeInfo["long"] is num
+          ? _bikeInfo["long"]
+          : num.parse(_bikeInfo["long"]);
       subMap["chartData"].add(GPSChartPoint(latitude, longitude));
     } else {
-      var value = _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
+      var value =
+          _bikeInfo[key] is num ? _bikeInfo[key] : num.parse(_bikeInfo[key]);
       subMap["chartData"].add(CartesianChartPoint(currentTime, value));
     }
 
