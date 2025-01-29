@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -198,11 +199,24 @@ class _RealTimeState extends State<RealTime> {
                           value: name,
                           label: name,
                           leadingIcon: IconButton(
-                              onPressed: () => print("Deleting..."),
-                              icon: Icon(Icons.delete, color: Colors.blue,)),
+                              onPressed: () {
+                                deleteCollectionByName(API_URL, name);
+                                setState(() {
+                                  isShowingDatabase = !isShowingDatabase;
+                                });
+                              },
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.blue,
+                              )),
                           trailingIcon: IconButton(
-                              onPressed: () => print("Downloading..."),
-                              icon: Icon(Icons.download, color: Colors.blue,))));
+                              onPressed: () {
+                                print('a');
+                              },
+                              icon: Icon(
+                                Icons.download,
+                                color: Colors.blue,
+                              ))));
                     }
                     setState(() {
                       dropdownList = tmpDropdown;
@@ -814,6 +828,14 @@ Future<List<String>> getListCollectionsContinuous(String url) async {
   }
   collectionNames.sort();
   return collectionNames;
+}
+
+Future<void> deleteCollectionByName(String url, String collectionName) async {
+  Map bodyAsMap = {"collectionName": collectionName};
+  final bodyRequest = json.encode(bodyAsMap);
+  final response = await http.post(Uri.parse('$url/delete'),
+      headers: {"Content-Type": "application/json"}, body: bodyRequest);
+  print("Response: ${response.statusCode}:${response.body}");
 }
 
 Map<String, dynamic> initMap() {
