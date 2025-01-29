@@ -73,7 +73,7 @@ class _RealTimeState extends State<RealTime> {
     });
   }
 
-  String API_URL = "http://localhost:3001";
+  String API_URL = "https://589zwgo84pjp.share.zrok.io";
 
   initSocket() {
     socket = IO.io(API_URL, <String, dynamic>{
@@ -118,15 +118,15 @@ class _RealTimeState extends State<RealTime> {
                         "acel",
                         {
                           "title": "Aceleração X",
-                          "value": "${bikeInfo["acel_x"]} m/s²"
+                          "value": "${bikeInfo["acel_x"].toStringAsFixed(2)} m/s²"
                         },
                         {
                           "title": "Aceleração Y",
-                          "value": "${bikeInfo["acel_y"]} m/s²"
+                          "value": "${bikeInfo["acel_y"].toStringAsFixed(2)} m/s²"
                         },
                         {
                           "title": "Aceleração Z",
-                          "value": "${bikeInfo["acel_z"]} m/s²"
+                          "value": "${bikeInfo["acel_z"].toStringAsFixed(2)} m/s²"
                         },
                         chartDataAndController,
                         setState,
@@ -139,15 +139,15 @@ class _RealTimeState extends State<RealTime> {
                         "vel",
                         {
                           "title": "Velocidade X",
-                          "value": "${bikeInfo["vel_x"]} rad/s"
+                          "value": "${bikeInfo["vel_x"].toStringAsFixed(2)} rad/s"
                         },
                         {
                           "title": "Velocidade Y",
-                          "value": "${bikeInfo["vel_y"]} rad/s"
+                          "value": "${bikeInfo["vel_y"].toStringAsFixed(2)} rad/s"
                         },
                         {
                           "title": "Velocidade Z",
-                          "value": "${bikeInfo["vel_z"]} rad/s"
+                          "value": "${bikeInfo["vel_z"].toStringAsFixed(2)} rad/s"
                         },
                         chartDataAndController,
                         setState,
@@ -158,9 +158,9 @@ class _RealTimeState extends State<RealTime> {
                     child: buildXYZCard(
                         "EIXO",
                         "axis",
-                        {"title": "Roll", "value": "${bikeInfo["roll"]} º"},
-                        {"title": "Pitch", "value": "${bikeInfo["pitch"]} º"},
-                        {"title": "Yaw", "value": "${bikeInfo["yaw"]} º"},
+                        {"title": "Roll", "value": "${bikeInfo["roll"].toStringAsFixed(2)} º"},
+                        {"title": "Pitch", "value": "${bikeInfo["pitch"].toStringAsFixed(2)} º"},
+                        {"title": "Yaw", "value": "${bikeInfo["yaw"].toStringAsFixed(2)} º"},
                         chartDataAndController,
                         setState,
                         toggleButtonsAxis)),
@@ -267,7 +267,7 @@ class _RealTimeState extends State<RealTime> {
                         "veloc",
                         {
                           "title": "Velocidade GPS",
-                          "value": "${bikeInfo["veloc"]} º"
+                          "value": "${bikeInfo["veloc"].toStringAsFixed(2)} º"
                         },
                         chartDataAndController,
                         toggleButtonOneDimensionalVel,
@@ -480,11 +480,7 @@ Widget buildXYZChart(
             xValueMapper: (CartesianChartPoint point, _) => point.date,
             yValueMapper: (CartesianChartPoint point, _) => point.value,
             enableTooltip: true,
-            dataLabelSettings: DataLabelSettings(
-                isVisible: true,
-                color: dataColor,
-                borderRadius: 100,
-                textStyle: TextStyle(fontSize: 10))),
+            ),
       );
     } else {
       _chartController[dataName]?["controller"] = null;
@@ -846,20 +842,20 @@ Future<void> deleteCollectionByName(String url, String collectionName) async {
 
 Map<String, dynamic> initMap() {
   Map<String, dynamic> newMap = {
-    "id": "",
-    "acel_x": "",
-    "acel_y": "",
-    "acel_z": "",
-    "vel_x": "",
-    "vel_y": "",
-    "vel_z": "",
-    "roll": "",
-    "pitch": "",
-    "yaw": "",
-    "esterc": "",
-    "long": "",
-    "lat": "",
-    "veloc": "",
+    "id": 0,
+    "acel_x": 0,
+    "acel_y": 0,
+    "acel_z": 0,
+    "vel_x": 0,
+    "vel_y": 0,
+    "vel_z": 0,
+    "roll": 0,
+    "pitch": 0,
+    "yaw": 0,
+    "esterc": 0,
+    "long": 0,
+    "lat": 0,
+    "veloc": 0,
   };
   return newMap;
 }
