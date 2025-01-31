@@ -16,7 +16,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import 'package:dio/dio.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 typedef MapChartController = Map<String, Map<String, dynamic>>;
+
 
 class RealTime extends StatefulWidget {
   const RealTime({super.key});
@@ -54,6 +57,8 @@ class _RealTimeState extends State<RealTime> {
   bool isShowingDatabase = false;
   List<DropdownMenuEntry> dropdownList = [];
 
+  String API_URL = "";
+
   @override
   void dispose() {
     socket.disconnect();
@@ -65,15 +70,16 @@ class _RealTimeState extends State<RealTime> {
   @override
   void initState() {
     super.initState();
-    initSocket();
-    Timer.periodic(Duration(milliseconds: 200), (timer) {
-      setState(() {
-        timerSocketFlag = true;
+    loadEnvFile().then((value) {
+      API_URL = value;
+      initSocket();
+      Timer.periodic(Duration(milliseconds: 200), (timer) {
+        setState(() {
+          timerSocketFlag = true;
+        });
       });
-    });
+    },);
   }
-
-  String API_URL = "https://589zwgo84pjp.share.zrok.io";
 
   initSocket() {
     socket = IO.io(API_URL, <String, dynamic>{
@@ -921,4 +927,11 @@ class GPSChartPoint {
 
   final num lat;
   final num long;
+}
+
+Future<String> loadEnvFile() async{
+  await dotenv.load(fileName: ".env");
+  String apiUrl = dotenv.env["API_URL"]!;
+  print("Vou retornar: $apiUrl");
+  return apiUrl;
 }
