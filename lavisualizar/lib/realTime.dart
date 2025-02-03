@@ -47,6 +47,7 @@ class _RealTimeState extends State<RealTime> {
   List<bool> toggleButtonsAccel = [false, false, false];
   List<bool> toggleButtonsVel = [false, false, false];
   List<bool> toggleButtonsAxis = [false, false, false];
+  List<bool> toggleButtonsTemp = [false, false, false];
 
   List<bool> toggleButtonOneDimensionalVel = [true, false];
   List<bool> toggleButtonOneDimensionalEsterc = [true, false];
@@ -279,6 +280,18 @@ class _RealTimeState extends State<RealTime> {
                         toggleButtonOneDimensionalVel,
                         setState)),
                 Container(
+                    width: 480,
+                    height: 380,
+                    child: buildXYZCard(
+                        "TEMPERATURA",
+                        "temp",
+                        {"title": "Termopar 1", "value": "${bikeInfo["termopar1"].toStringAsFixed(2)} º"},
+                        {"title": "Termopar 2", "value": "${bikeInfo["termopar2"].toStringAsFixed(2)} º"},
+                        {"title": "Termopar 3", "value": "${bikeInfo["termopar3"].toStringAsFixed(2)} º"},
+                        chartDataAndController,
+                        setState,
+                        toggleButtonsTemp)),
+                /* Container(
                   width: 480,
                   height: 380,
                   child: buildOneDimensionalCard(
@@ -291,7 +304,7 @@ class _RealTimeState extends State<RealTime> {
                       chartDataAndController,
                       toggleButtonOneDimensionalEsterc,
                       setState),
-                ),
+                ), */
                 Container(
                   width: 480,
                   height: 380,
@@ -454,7 +467,8 @@ Widget buildXYZChart(
   List<List<String>> nameXyz = [
     ["acel_x", "acel_y", "acel_z"],
     ["vel_x", "vel_y", "vel_z"],
-    ["roll", "pitch", "yaw"]
+    ["roll", "pitch", "yaw"],
+    ["termopar1", "termopar2", "termopar3"],
   ];
 
   List<String> currentNameXyz = [];
@@ -468,6 +482,9 @@ Widget buildXYZChart(
       break;
     case "axis":
       currentNameXyz = nameXyz[2];
+      break;
+    case "temp":
+      currentNameXyz = nameXyz[3];
       break;
   }
 
@@ -857,6 +874,9 @@ Map<String, dynamic> initMap() {
     "long": 0,
     "lat": 0,
     "veloc": 0,
+    "termopar1": 0,
+    "termopar2": 0,
+    "termopar3": 0
   };
   return newMap;
 }
@@ -910,6 +930,18 @@ MapChartController initMapChartController() {
     "gps": {
       "controller": null,
       "chartData": List<GPSChartPoint>.empty(growable: true)
+    },
+    "termopar1": {
+      "controller": null,
+      "chartData": List<CartesianChartPoint>.empty(growable: true)
+    },
+    "termopar2": {
+      "controller": null,
+      "chartData": List<CartesianChartPoint>.empty(growable: true)
+    },
+    "termopar3": {
+      "controller": null,
+      "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
   };
   return newMap;
