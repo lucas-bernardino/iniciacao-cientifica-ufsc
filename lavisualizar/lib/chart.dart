@@ -44,7 +44,10 @@ List<List<String>> CARD_INFO_GROUP = [
   ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "graus"],
   ["YAW MÁXIMO", "YAW MÉDIO", "YAW MÍNIMO", "graus"],
   ["ESTERÇAMENTO MÁXIMO", "ESTERÇAMENTO MÉDIO", "ESTERÇAMENTO MÍNIMO", "deg"],
-  ["LATITUDE", "LONGITUDE", "", ""]
+  ["LATITUDE", "LONGITUDE", "", ""],
+  ["TEMPERATURA T1 MÁXIMO", "TEMPERATURA T1 MÉDIO", "TEMPERATURA T1 MÍNIMO", "°C"],
+  ["TEMPERATURA T2 MÁXIMO", "TEMPERATURA T2 MÉDIO", "TEMPERATURA T2 MÍNIMO", "°C"],
+  ["TEMPERATURA T3 MÁXIMO", "TEMPERATURA T3 MÉDIO", "TEMPERATURA T3 MÍNIMO", "°C"],
 ];
 
 List<List<String>> CARD_INFO_INDIVIDUAL = [
@@ -81,9 +84,13 @@ class _ChartState extends State<Chart> {
     false,
     false,
     false,
+    false
   ];
 
   List<bool> isButtonPressedGroup = [
+    false,
+    false,
+    false,
     false,
     false,
     false,
@@ -298,6 +305,22 @@ class _ChartState extends State<Chart> {
                           width: 285,
                           child: Text("Velocidade X | Velocidade Y | Velocidade Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          isButtonPressedIndividual = isButtonPressedIndividual
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedIndividual[3] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedIndividual[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 285,
+                          child: Text("Termopar 1 | Termopar 2 | Termopar 3", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
+                  ),
                   SizedBox(
                     height: 10,
                   ),
@@ -487,6 +510,63 @@ class _ChartState extends State<Chart> {
                       child: SizedBox(
                           width: 125,
                           child: Text("Esterçamento", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 20;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[9] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[9] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Termopar 1", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 21;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[10] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[10] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Termopar 2", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 22;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[11] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[11] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Termopar 3", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   IconButton(
                     onPressed: () => setState(() {
                       _shouldDisplayFutureBuilderSingularFile = true;
@@ -725,6 +805,9 @@ Widget buildChartGroup(
   }
   else if (pressedButtonOption[2] == true) {
     values_column = [4, 5, 6];
+  }
+  else if (pressedButtonOption[3] == true) {
+    values_column = [20, 21, 22];
   }
 
 
@@ -986,6 +1069,12 @@ List<String> getInfoCard(int value_column) {
       return CARD_INFO_GROUP[5];
     case 17:
       return CARD_INFO_GROUP[6];
+    case 20:
+      return CARD_INFO_GROUP[7];
+    case 21:
+      return CARD_INFO_GROUP[8];
+    case 22:
+      return CARD_INFO_GROUP[9];
   }
 
   return [""];
