@@ -276,7 +276,8 @@ def angle_thread():
                         "altitude": altitude,
                         "termopar1": float(t1),
                         "termopar2": float(t2),
-                        "termopar3": float(t3)
+                        "termopar3": float(t3),
+                        "Horario" : (str(datetime.datetime.now())).split()[1]
                     }
                     sio.emit("send", dados_package)
                     print(dados_package)
