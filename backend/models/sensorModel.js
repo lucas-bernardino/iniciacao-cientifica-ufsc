@@ -131,8 +131,12 @@ const sensorSchema = mongoose.Schema(
       type: Number,
       required: false,
       default: -99,
+    },
+    Horario: {
+      type: String,
+      required: false,
+      default: "foo",
     }
-
   },
   {
     timestamps: true
