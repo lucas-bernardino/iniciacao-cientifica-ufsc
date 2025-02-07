@@ -3,7 +3,7 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const { Sensor, sensorSchema } = require("./models/sensorModel");
-const pl = require('nodejs-polars'); 
+const pl = require('nodejs-polars');
 require('dotenv').config()
 
 app.use(express.json());
@@ -182,6 +182,7 @@ app.get("/download", async (req, res) => {
 
     for (const doc of collectionData) {
       delete doc._id;
+      delete doc.id;
       doc["createdAt"] = String(doc["createdAt"])
       delete doc.updatedAt;
       delete doc.__v;
