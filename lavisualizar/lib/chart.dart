@@ -72,7 +72,7 @@ class _ChartState extends State<Chart> {
   bool _shouldDisplayOptions = false;
   double maxValue = 0;
   double avgValue = 0;
-  int chartColumnOption = 17;
+  int chartColumnOption = 15;
   Set<String> _chartQualitySelection = {"Performance"};
   Set<String> _chartGroupChoice = {"Individual"};
   double _sliderFilterParam = 1;
@@ -436,7 +436,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 17;
+                          chartColumnOption = 15;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -455,7 +455,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 16;
+                          chartColumnOption = 17;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -474,7 +474,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 18;
+                          chartColumnOption = 13;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -530,7 +530,7 @@ Widget buildChartIndividual(
   List<DataPoints> _dataPoints = [];
   List<DataPointsGPS> _dataPointsGps = [];
 
-  var time_column = COLUMNS.HOUR.index;
+  var time_column = 23;
 
   double maxYAxis = csvData[1][value_column] as double;
   double minYAxis = csvData[1][value_column] as double;
@@ -543,9 +543,9 @@ Widget buildChartIndividual(
 
   for (var item in csvData.skip(1)) {
     try {
-      if (value_column == 16) {
-        double long = item[15] as double;
-        double lat = item[16] as double;
+      if (value_column == 17) {
+        double long = item[16] as double;
+        double lat = item[17] as double;
         _dataPointsGps.add(DataPointsGPS(lat, long));
         continue;
       }
@@ -573,7 +573,7 @@ Widget buildChartIndividual(
   double avgValue = totalSum / csvLength;
 
   List<DataPoints> _dataPointsFiltered = [];
-  if (value_column != 16) {
+  if (value_column != 17) {
     var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints, chartGroupChoice);
     _dataPointsFiltered = ret[0] as List<DataPoints>;
     maxYAxis = ret[1] as double;
@@ -583,7 +583,7 @@ Widget buildChartIndividual(
 
   return Column(
     children: [
-      value_column == 16
+      value_column == 17
           ? SizedBox()
           : Padding(
         padding: const EdgeInsets.only(left: 40.0),
@@ -626,7 +626,7 @@ Widget buildChartIndividual(
       ),
       SfCartesianChart(
         title: ChartTitle(
-          text: value_column == 16
+          text: value_column == 17
               ? "longitude em função da latitude"
               : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
           textStyle: TextStyle(
@@ -647,7 +647,7 @@ Widget buildChartIndividual(
           enableMouseWheelZooming: true,
           enablePinching: true,
         ),
-        primaryXAxis: value_column != 16
+        primaryXAxis: value_column != 17
             ? (isPerformance ? DateTimeAxis(
           labelStyle: TextStyle(
               color: Colors.white,
@@ -677,10 +677,10 @@ Widget buildChartIndividual(
           title: AxisTitle(
               text:
               "${chartInfo[0].split(" ")[0].toLowerCase()} [${chartInfo[3]}]", textStyle: TextStyle(color: Colors.white)),
-          minimum: value_column != 16 ? (minYAxis - 1) : null,
-          maximum: value_column != 16 ? (maxYAxis + 1) : null,
+          minimum: value_column != 17 ? (minYAxis - 1) : null,
+          maximum: value_column != 17 ? (maxYAxis + 1) : null,
         ),
-        series: value_column != 16
+        series: value_column != 17
             ? <FastLineSeries<DataPoints, DateTime>>[
           // Initialize line series with data points
           FastLineSeries<DataPoints, DateTime>(
@@ -714,7 +714,7 @@ Widget buildChartGroup(
   List<DataPoints> _dataPointsFiltered2 = [];
   List<DataPoints> _dataPointsFiltered3 = [];
 
-  var time_column = COLUMNS.HOUR.index;
+  var time_column = 23;
 
   List<int> values_column = [0, 0, 0];
   if (pressedButtonOption[0] == true) {
@@ -980,11 +980,11 @@ List<String> getInfoCard(int value_column) {
       return CARD_INFO_GROUP[3];
     case 9:
       return CARD_INFO_GROUP[4];
-    case 17:
+    case 15:
       return CARD_INFO_GROUP[1];
-    case 18:
+    case 13:
       return CARD_INFO_GROUP[5];
-    case 16:
+    case 17:
       return CARD_INFO_GROUP[6];
   }
 
