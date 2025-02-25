@@ -1,8 +1,36 @@
-use std::fmt;
+use std::{fmt, sync::{Arc, Mutex}};
+
 
 use crate::utils::{clean_accel, clean_vel, clean_angle};
 
 pub struct BikeSensor {
+    pub uart: Arc<Mutex<UartSensor>>,
+    pub i2c: Arc<Mutex<I2CSensor>>
+}
+
+impl fmt::Display for BikeSensor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Uart -> {}\nI2C -> {}", self.uart.lock().unwrap(), self.i2c.lock().unwrap())
+    }
+}
+
+impl BikeSensor {
+    pub fn new() -> Self {
+        BikeSensor {
+            uart: Arc::new(Mutex::new(UartSensor::new())),
+            i2c: Arc::new(Mutex::new(I2CSensor::new()))
+        }   
+    }
+
+    pub fn update(&mut self) -> Result<(), Box<dyn std::error::Error + '_>>{
+        self.uart.lock()?.update()?;
+        self.i2c.lock()?.update()?;
+
+        Ok(())
+    }
+}
+
+pub struct UartSensor {
     pub buffer: Vec<u8>,
 
     pub acceleration: [f32; 3],
@@ -10,7 +38,7 @@ pub struct BikeSensor {
     pub angle: [f32; 3],
 }
 
-impl fmt::Display for BikeSensor {
+impl fmt::Display for UartSensor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Acceleration: [{}, {}, {}]\nAngle Velocity: [{}, {}, {}]\nAngle: [{}, {}, {}]\n",
                    self.acceleration[0], self.acceleration[1], self.acceleration[2],
@@ -19,13 +47,13 @@ impl fmt::Display for BikeSensor {
     }
 }
 
-impl BikeSensor {
+impl UartSensor {
     pub fn new() -> Self {
         let mut buff: Vec<u8> = vec![0; 42];
         buff.insert(0, 0x55);
         buff.insert(1, 0x51);
         
-        BikeSensor {
+        UartSensor {
             buffer: buff,
             acceleration: [0.0; 3],
             angle_velocity: [0.0; 3],
@@ -41,6 +69,35 @@ impl BikeSensor {
         self.acceleration = clean_accel(accel_raw)?;
         self.angle_velocity = clean_vel(angle_vel_raw)?;
         self.angle = clean_angle(angle_raw)?;
+
+        Ok(())
+    }
+}
+
+pub struct I2CSensor {
+    pub buffer: Vec<u8>,
+    pub steer: f32
+}
+
+impl fmt::Display for I2CSensor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Steer: {}", self.steer)
+    }
+}
+
+impl I2CSensor {
+    pub fn new() -> Self {
+        let buffer: Vec<u8> = vec![0; 3];
+        let steer: f32 = 1.0;
+
+        I2CSensor {
+            buffer,
+            steer
+        }
+    }
+
+    pub fn update(&mut self) -> Result<(), &'static str>{
+        self.steer += 1.0;
 
         Ok(())
     }
