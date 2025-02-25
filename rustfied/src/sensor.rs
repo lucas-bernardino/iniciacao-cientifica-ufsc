@@ -33,13 +33,15 @@ impl BikeSensor {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> Result<(), &'static str>{
         let accel_raw = &self.buffer[0..11];
         let angle_vel_raw = &self.buffer[11..22];
         let angle_raw = &self.buffer[22..33];
         
-        self.acceleration = clean_accel(accel_raw);
-        self.angle_velocity = clean_vel(angle_vel_raw);
-        self.angle = clean_angle(angle_raw);
+        self.acceleration = clean_accel(accel_raw)?;
+        self.angle_velocity = clean_vel(angle_vel_raw)?;
+        self.angle = clean_angle(angle_raw)?;
+
+        Ok(())
     }
 }

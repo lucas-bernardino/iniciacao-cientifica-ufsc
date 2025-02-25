@@ -17,11 +17,11 @@ fn main() {
             let mut buff_check: Vec<u8> = vec![0; 2];
             let mut sensor = BikeSensor::new();
             loop {
-                port.read_exact(&mut buff_check).expect("Failed to read to buff_check");
+                port.read_exact(&mut buff_check).expect(" --- IMPROVE ERROR HANDLING --- ");
                 if buff_check.starts_with(&[0x55, 0x51]) {
-                    port.read_exact(&mut sensor.buffer[2..]).expect("Failed to read from buff");
+                    port.read_exact(&mut sensor.buffer[2..]).expect(" --- IMPROVE ERROR HANDLING --- ");
 
-                    sensor.update();
+                    let _ = sensor.update().inspect_err(|e| eprintln!("Failed to update sensor. Error: {e}")); // Still need to improve error handling
                     println!("{sensor}");
                 } 
             }
