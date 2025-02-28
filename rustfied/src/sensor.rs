@@ -1,5 +1,9 @@
 use std::{fmt, sync::{Arc, Mutex}};
+use std::fmt::Write as _;
 use std::io::Write;
+
+use serde_json::json;
+use chrono::prelude::*;
 
 
 use crate::utils::{clean_accel, clean_vel, clean_angle};
@@ -7,7 +11,9 @@ use crate::utils::{clean_accel, clean_vel, clean_angle};
 pub struct BikeSensor {
     pub uart: Arc<Mutex<UartSensor>>,
     pub i2c: Arc<Mutex<I2CSensor>>,
-    pub file: Arc<Mutex<std::fs::File>>
+    pub file: Arc<Mutex<std::fs::File>>,
+
+    pub counter: Arc<Mutex<i32>>
 }
 
 impl fmt::Display for BikeSensor {
@@ -17,11 +23,12 @@ impl fmt::Display for BikeSensor {
 }
 
 impl BikeSensor {
-    pub fn new(file_name: &str) -> Self {
+    pub fn new(file_name: &str) -> BikeSensor {
         BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
             i2c: Arc::new(Mutex::new(I2CSensor::new())),
-            file: Arc::new(Mutex::new(std::fs::File::create(file_name).expect("Failed to create file with path the given path")))
+            file: Arc::new(Mutex::new(std::fs::File::create(file_name).expect("Failed to create file with path the given path"))),
+            counter: Arc::new(Mutex::new(0))
         }   
     }
 
@@ -36,18 +43,63 @@ impl BikeSensor {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
         
-        if uart.is_ready == true && i2c.is_ready == true {
+        if uart.is_ready && i2c.is_ready {
 
-            let uart_str: String = uart.buffer.iter().map(|item| {
-                return format!("{:02x}", item);
-            }).collect();
+            let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
+                let _ = write!(output, "{b:02x}");
+                output
+            });
             
-            self.file.lock()?.write(format!("{}{}\n", uart_str, i2c.steer).as_bytes())?;
+            self.file.lock()?.write_all(format!("{}{}\n", uart_str, i2c.steer).as_bytes())?;
 
             uart.is_ready = false;
             i2c.is_ready = false;
         }
         Ok(())
+    }
+
+    pub fn get_json(&self) -> Result<serde_json::Value, Box<dyn std::error::Error + '_>> {
+        let uart = self.uart.lock()?;
+        let i2c = self.i2c.lock()?;
+        
+        let mut counter = self.counter.lock()?;
+
+        //'18:25:52.843023'
+        let time: DateTime<Local> = Local::now();
+        let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second());
+
+
+        
+        let json = json!({
+            "id": *counter,
+            "acel_x": uart.acceleration[0],
+            "acel_y": uart.acceleration[1],
+            "acel_z": uart.acceleration[2],
+            "vel_x": uart.angle_velocity[0],
+            "vel_y": uart.angle_velocity[1],
+            "vel_z": uart.angle_velocity[2],
+            "roll": uart.angle[0],
+            "pitch": uart.angle[0],
+            "yaw": uart.angle[0],
+            "mag_x": 0.0,
+            "mag_y": 0.0,
+            "mag_z": 0.0,
+            "temp": 0.0,
+            "esterc": i2c.steer,
+            "rot": 0.0,
+            "veloc": 0.0,
+            "long": 0.0,
+            "lat": 0.0,
+            "press_ar": 0.0,
+            "altitude": 0.0,
+            "termopar1": 0.0,
+            "termopar2": 0.0,
+            "termopar3": 0.0,
+            "Horario" : time_str
+        });
+
+        *counter += 1;
+        Ok(json)
     }
 }
 
@@ -71,7 +123,7 @@ impl fmt::Display for UartSensor {
 }
 
 impl UartSensor {
-    pub fn new() -> Self {
+    pub fn new() -> UartSensor {
         let mut buff: Vec<u8> = vec![0; 42];
         buff.insert(0, 0x55);
         buff.insert(1, 0x51);
@@ -112,7 +164,7 @@ impl fmt::Display for I2CSensor {
 }
 
 impl I2CSensor {
-    pub fn new() -> Self {
+    pub fn new() -> I2CSensor {
         let buffer: Vec<u8> = vec![0; 3];
         let steer: f32 = 1.0;
 

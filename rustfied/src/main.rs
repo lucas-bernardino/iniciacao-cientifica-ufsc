@@ -1,22 +1,36 @@
-use std::{io::Write, sync::{Arc, Mutex}, time::Duration};
+use std::{sync::{Arc, Mutex}, time::Duration};
 
 use rustfied::sensor::{BikeSensor, UartSensor, I2CSensor};
 
 use tokio::sync::Notify;
 
+use rust_socketio::asynchronous::ClientBuilder;
+
+use serde_json::json;
+
+const SERVER_URL: &str = "http://localhost:3001";
+
 #[tokio::main]
 async fn main() {
+
+    let socket = ClientBuilder::new(SERVER_URL)
+     .namespace("/")
+     .connect()
+     .await
+     .expect("Connection failed");
 
     let sensor = Arc::new(BikeSensor::new("rust_raw_data.txt"));
     let notify = Arc::new(Notify::new());
 
-    let uart_sensor = Arc::clone(&sensor.uart);
-    let uart_notify = Arc::clone(&notify);
-
-    let i2c_sensor = Arc::clone(&sensor.i2c);
-    let i2c_notify = Arc::clone(&notify);
-
     let file_sensor_clone = Arc::clone(&sensor);
+    let network_clone = Arc::clone(&sensor);
+
+    let uart_sensor = Arc::clone(&sensor.uart);
+    let i2c_sensor = Arc::clone(&sensor.i2c);
+
+    let uart_notify = Arc::clone(&notify);
+    let i2c_notify = Arc::clone(&notify);
+    let notify_clone = Arc::clone(&notify);
 
     tokio::task::spawn_blocking(move || {
         uart_sensor_task(uart_sensor, uart_notify);
@@ -26,9 +40,16 @@ async fn main() {
         i2c_sensor_task(i2c_sensor, i2c_notify);
     }); 
 
-    tokio::spawn(async move {
+    let file_handler = tokio::spawn(async move {
         file_task(file_sensor_clone, notify).await;
-    }).await.unwrap();
+    });
+
+    let network_handler = tokio::spawn(async move {
+        network_task(network_clone, notify_clone, socket).await;
+    });
+
+    let _ = tokio::join!(file_handler, network_handler);
+
 
 }
 
@@ -51,7 +72,7 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
                     uart_lock.update().expect("Failed to update uart"); // Still need to improve error handling
 
                     uart_lock.is_ready = true; 
-                    notification.notify_one();
+                    notification.notify_waiters();
                 } 
             }
         }
@@ -69,7 +90,7 @@ fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>)
             i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
             
             i2c_lock.is_ready = true;
-            notification.notify_one();
+            notification.notify_waiters();
         }
         
         std::thread::sleep(Duration::from_millis(1));
@@ -80,5 +101,29 @@ async fn file_task(bike_sensor: Arc<BikeSensor>, notification: Arc<Notify>) {
     loop {
         notification.notified().await; // wait for notification from sensors
         bike_sensor.write_file().unwrap();
+    }
+}
+
+async fn network_task(bike_sensor: Arc<BikeSensor>, notification: Arc<Notify>, socket: rust_socketio::asynchronous::Client) {
+    let duration = Duration::from_millis(250); // Send data aprox. every 250ms
+    let mut interval = tokio::time::interval(duration);
+
+    let init_json = json!({
+        "contador": 0
+    });
+
+    reqwest::Client::new()
+        .post(format!("{}/button_pressed", SERVER_URL))
+        .json(&init_json)
+        .send()
+        .await
+        .expect("Failed to hit /button_pressed route");
+    
+    loop {
+        notification.notified().await;
+        interval.tick().await;
+
+        let sensor_json = bike_sensor.get_json().expect("Failed to parse to json");
+        socket.emit("send", sensor_json).await.expect("Server unreachable");
     }
 }

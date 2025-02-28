@@ -10,3 +10,5 @@ lavisualizar/build
 lavisualizar/windows
 lavisualizar/web
 rustfied/target
+backend/node_modules
+node_modules
