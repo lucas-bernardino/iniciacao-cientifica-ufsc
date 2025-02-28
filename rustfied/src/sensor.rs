@@ -36,6 +36,8 @@ pub struct UartSensor {
     pub acceleration: [f32; 3],
     pub angle_velocity: [f32; 3],
     pub angle: [f32; 3],
+
+    pub is_ready: bool
 }
 
 impl fmt::Display for UartSensor {
@@ -57,7 +59,8 @@ impl UartSensor {
             buffer: buff,
             acceleration: [0.0; 3],
             angle_velocity: [0.0; 3],
-            angle: [0.0; 3]
+            angle: [0.0; 3],
+            is_ready: true
         }
     }
 
@@ -76,7 +79,9 @@ impl UartSensor {
 
 pub struct I2CSensor {
     pub buffer: Vec<u8>,
-    pub steer: f32
+    pub steer: f32,
+
+    pub is_ready: bool
 }
 
 impl fmt::Display for I2CSensor {
@@ -92,7 +97,8 @@ impl I2CSensor {
 
         I2CSensor {
             buffer,
-            steer
+            steer,
+            is_ready: true
         }
     }
 
