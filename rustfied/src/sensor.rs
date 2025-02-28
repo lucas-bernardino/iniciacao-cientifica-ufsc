@@ -1,11 +1,13 @@
 use std::{fmt, sync::{Arc, Mutex}};
+use std::io::Write;
 
 
 use crate::utils::{clean_accel, clean_vel, clean_angle};
 
 pub struct BikeSensor {
     pub uart: Arc<Mutex<UartSensor>>,
-    pub i2c: Arc<Mutex<I2CSensor>>
+    pub i2c: Arc<Mutex<I2CSensor>>,
+    pub file: Arc<Mutex<std::fs::File>>
 }
 
 impl fmt::Display for BikeSensor {
@@ -15,10 +17,11 @@ impl fmt::Display for BikeSensor {
 }
 
 impl BikeSensor {
-    pub fn new() -> Self {
+    pub fn new(file_name: &str) -> Self {
         BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
-            i2c: Arc::new(Mutex::new(I2CSensor::new()))
+            i2c: Arc::new(Mutex::new(I2CSensor::new())),
+            file: Arc::new(Mutex::new(std::fs::File::create(file_name).expect("Failed to create file with path the given path")))
         }   
     }
 
@@ -26,6 +29,24 @@ impl BikeSensor {
         self.uart.lock()?.update()?;
         self.i2c.lock()?.update()?;
 
+        Ok(())
+    }
+
+    pub fn write_file(&self) -> Result<(), Box<dyn std::error::Error + '_>>{
+        let mut uart = self.uart.lock()?;
+        let mut i2c = self.i2c.lock()?;
+        
+        if uart.is_ready == true && i2c.is_ready == true {
+
+            let uart_str: String = uart.buffer.iter().map(|item| {
+                return format!("{:02x}", item);
+            }).collect();
+            
+            self.file.lock()?.write(format!("{}{}\n", uart_str, i2c.steer).as_bytes())?;
+
+            uart.is_ready = false;
+            i2c.is_ready = false;
+        }
         Ok(())
     }
 }
