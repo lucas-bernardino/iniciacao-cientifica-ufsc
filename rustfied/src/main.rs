@@ -12,23 +12,21 @@ async fn main() {
     let i2c_sensor = Arc::clone(&sensor.i2c);
     let file_sensor_clone = Arc::clone(&sensor);
 
-    let uart_handle = tokio::spawn(async move {
-        uart_sensor_task(uart_sensor).await;
+    tokio::task::spawn_blocking(move || {
+        uart_sensor_task(uart_sensor);
     });
 
-    let i2c_handle = tokio::spawn(async move {
-        i2c_sensor_task(i2c_sensor).await;
+    tokio::task::spawn_blocking(move || {
+        i2c_sensor_task(i2c_sensor);
     }); 
 
-    let file_handle = tokio::spawn(async move {
+    tokio::spawn(async move {
         file_task(file, file_sensor_clone).await;
-    });
-
-    let _ = tokio::join!(uart_handle, i2c_handle, file_handle);
+    }).await.unwrap();
 
 }
 
-async fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>) {
+fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>) {
     let port_name = "/dev/ttyUSB0";
     let baud_rate = 9600;
 
@@ -57,7 +55,7 @@ async fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>) {
     } 
 }
 
-async fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>) {
+fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>) {
     loop {
         {
             let mut i2c_lock = i2c_sensor.lock().unwrap();
@@ -65,7 +63,7 @@ async fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>) {
             i2c_lock.is_ready = true;
         }
         
-        tokio::time::sleep(Duration::from_millis(1)).await;
+        std::thread::sleep(Duration::from_millis(1));
     }
 }
 
