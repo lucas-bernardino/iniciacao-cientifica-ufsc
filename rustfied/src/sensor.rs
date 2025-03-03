@@ -8,6 +8,9 @@ use std::{
 use chrono::prelude::*;
 use serde_json::json;
 
+use i2cdev::core::*;
+use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
+
 use crate::utils::{clean_accel, clean_angle, clean_vel};
 
 pub struct BikeSensor {
@@ -169,9 +172,8 @@ impl UartSensor {
 }
 
 pub struct I2CSensor {
-    pub buffer: Vec<u8>,
-    pub steer: f32,
-
+    i2c_device: LinuxI2CDevice,
+    pub steer: String,
     pub is_ready: bool,
 }
 
@@ -183,20 +185,31 @@ impl fmt::Display for I2CSensor {
 
 impl I2CSensor {
     pub fn new() -> I2CSensor {
-        let buffer: Vec<u8> = vec![0; 3];
-        let steer: f32 = 1.0;
-
+        let steer = String::from("1.0");
+        let mut i2c_device =
+            LinuxI2CDevice::new("/dev/i2c-1", 0x36).expect("Failed to connect to I2C");
         I2CSensor {
-            buffer,
+            i2c_device,
             steer,
             is_ready: true,
         }
     }
 
     pub fn update(&mut self) -> Result<(), &'static str> {
-        self.steer += 1.0;
+        let mut high_byte = (self
+            .i2c_device
+            .smbus_read_byte_data(0x0C)
+            .expect("Failed to read register 0x0C") as u16)
+            << 8;
+        let low_byte = self
+            .i2c_device
+            .smbus_read_byte_data(0x0D)
+            .expect("Failed to read register 0x0D") as u16;
 
+        let raw_angle = high_byte | low_byte;
+        let angle_degrees = ((raw_angle & 0xFFF) as f64) * 0.08789;
+
+        self.steer = format!("{:.2}", angle_degrees);
         Ok(())
     }
 }
-

@@ -11,7 +11,11 @@ use rust_socketio::asynchronous::ClientBuilder;
 
 use serde_json::json;
 
+use i2cdev::core::*;
+use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
+
 const SERVER_URL: &str = "http://localhost:3001";
+const I2C_ADDRESS: u16 = 0x36;
 
 #[tokio::main]
 async fn main() {
@@ -87,11 +91,13 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
 }
 
 fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>) {
+    std::thread::sleep(Duration::from_millis(100));
     loop {
         {
             let mut i2c_lock = i2c_sensor.lock().unwrap();
-            i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
 
+            i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
+            println!("Angle degrees: {}", i2c_lock.steer);
             i2c_lock.is_ready = true;
             notification.notify_waiters();
         }
