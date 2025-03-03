@@ -182,6 +182,8 @@ def angle_thread():
     global contador
     global dados_package
 
+    angle_degrees = "111.11"
+
     while interrupt_flag:
         try:
             # According to the datasheet, the raw angle is obtained by reading from two registers.
@@ -200,7 +202,10 @@ def angle_thread():
             raw_angle = high_byte + low_byte
             angle_degrees = (raw_angle & 0xFFF) * 0.08789
             angle_degrees = "{:.2f}".format(angle_degrees)
-
+        except OSError:
+            print("Modulo de estercamento com problemas... Salvando 111.11 como valor padrao")
+            angle_degrees = "111.11"
+        finally:
             if len(data_sensors) == 176:
 
                 if not interrupt_flag:
@@ -253,9 +258,6 @@ def angle_thread():
                     contador += 1
 
                 data_sensors = ""
-        except UnicodeDecodeError:
-            print("ERRO UNICODE")
-            pass
 
     angle_degrees = ""
     data_sensors = ""
