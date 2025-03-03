@@ -1,9 +1,11 @@
 use std::{
+    io::Read,
+    str::FromStr,
     sync::{Arc, Mutex},
     time::Duration,
 };
 
-use rustfied::sensor::{BikeSensor, I2CSensor, UartSensor};
+use rustfied::sensor::{BikeSensor, BluetoothSensor, I2CSensor, UartSensor};
 
 use tokio::sync::Notify;
 
@@ -11,8 +13,7 @@ use rust_socketio::asynchronous::ClientBuilder;
 
 use serde_json::json;
 
-use i2cdev::core::*;
-use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
+use bluetooth_serial_port::{BtAddr, BtProtocol, BtSocket};
 
 const SERVER_URL: &str = "http://localhost:3001";
 const I2C_ADDRESS: u16 = 0x36;
@@ -33,10 +34,12 @@ async fn main() {
 
     let uart_sensor = Arc::clone(&sensor.uart);
     let i2c_sensor = Arc::clone(&sensor.i2c);
+    let bluetooth_sensor = Arc::clone(&sensor.bluetooth);
 
     let uart_notify = Arc::clone(&notify);
     let i2c_notify = Arc::clone(&notify);
     let notify_clone = Arc::clone(&notify);
+    let bluetooth_notify = Arc::clone(&notify);
 
     tokio::task::spawn_blocking(move || {
         uart_sensor_task(uart_sensor, uart_notify);
@@ -44,6 +47,10 @@ async fn main() {
 
     tokio::task::spawn_blocking(move || {
         i2c_sensor_task(i2c_sensor, i2c_notify);
+    });
+
+    tokio::task::spawn_blocking(move || {
+        bluetooth_sensor_task(bluetooth_sensor);
     });
 
     let file_handler = tokio::spawn(async move {
@@ -97,12 +104,20 @@ fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>)
             let mut i2c_lock = i2c_sensor.lock().unwrap();
 
             i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
-            println!("Angle degrees: {}", i2c_lock.steer);
             i2c_lock.is_ready = true;
             notification.notify_waiters();
         }
 
         std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
+fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
+    loop {
+        //let mut bluetooth_lock = bluetooth_sensor.lock().unwrap();
+        std::thread::sleep(Duration::from_millis(250));
+        //bluetooth_lock.update();
+        dbg!("After update");
     }
 }
 

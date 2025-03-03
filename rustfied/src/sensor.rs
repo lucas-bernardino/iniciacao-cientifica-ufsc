@@ -1,9 +1,11 @@
 use std::fmt::Write as _;
-use std::io::Write;
+use std::io::{Write, Read};
 use std::{
     fmt,
+    str::FromStr,
     sync::{Arc, Mutex},
 };
+
 
 use chrono::prelude::*;
 use serde_json::json;
@@ -13,9 +15,12 @@ use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
 
 use crate::utils::{clean_accel, clean_angle, clean_vel};
 
+use bluetooth_serial_port::{BtAddr, BtProtocol, BtSocket};
+
 pub struct BikeSensor {
     pub uart: Arc<Mutex<UartSensor>>,
     pub i2c: Arc<Mutex<I2CSensor>>,
+    pub bluetooth: Arc<Mutex<BluetoothSensor>>,
     pub file: Arc<Mutex<std::fs::File>>,
 
     pub counter: Arc<Mutex<i32>>,
@@ -37,6 +42,7 @@ impl BikeSensor {
         BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
             i2c: Arc::new(Mutex::new(I2CSensor::new())),
+            bluetooth: Arc::new(Mutex::new((BluetoothSensor::new()))),
             file: Arc::new(Mutex::new(
                 std::fs::File::create(file_name)
                     .expect("Failed to create file with path the given path"),
@@ -55,6 +61,7 @@ impl BikeSensor {
     pub fn write_file(&self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
+        let mut bluetooth = self.bluetooth.lock()?;
 
         if uart.is_ready && i2c.is_ready {
             let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
@@ -64,7 +71,7 @@ impl BikeSensor {
 
             self.file
                 .lock()?
-                .write_all(format!("{}{}\n", uart_str, i2c.steer).as_bytes())?;
+                .write_all(format!("{}{}{}{}{}\n", uart_str, i2c.steer, bluetooth.termocouple1, bluetooth.termocouple2, bluetooth.termocouple3).as_bytes())?;
 
             uart.is_ready = false;
             i2c.is_ready = false;
@@ -211,5 +218,49 @@ impl I2CSensor {
 
         self.steer = format!("{:.2}", angle_degrees);
         Ok(())
+    }
+}
+
+pub struct BluetoothSensor {
+    bluetooth_conn: BtSocket,
+
+    pub termocouple1: f32,
+    pub termocouple2: f32,
+    pub termocouple3: f32,
+}
+
+impl BluetoothSensor {
+    pub fn new() -> BluetoothSensor {
+        
+        let mut bluetooth_conn = BtSocket::new(BtProtocol::RFCOMM).unwrap();
+        bluetooth_conn.connect(BtAddr::from_str("98:DA:50:02:E3:9E").unwrap()).unwrap();
+
+        BluetoothSensor {
+            bluetooth_conn,
+            termocouple1: 0.0,
+            termocouple2: 0.0,
+            termocouple3: 0.0,
+        }
+    }
+
+    pub fn update(&mut self) {
+        let mut buffer = [0; 50];
+        dbg!("Before reading");
+        self.bluetooth_conn.read(&mut buffer[..]).unwrap();
+        let buffer_str = String::from_utf8(buffer.into()).unwrap();
+        dbg!("After reading: {}", &buffer_str);
+        let vec_temps: Vec<_> = buffer_str
+            .split(",")
+            .take(3)
+            .map(|item| item.trim())
+            .collect();
+
+        dbg!("After vec_temps");
+        
+        self.termocouple1 = vec_temps[0].parse::<f32>().unwrap_or(0.0);
+        self.termocouple2 = vec_temps[1].parse::<f32>().unwrap_or(0.0);
+        self.termocouple3 = vec_temps[2].parse::<f32>().unwrap_or(0.0);
+        
+        dbg!("End of function");
     }
 }
