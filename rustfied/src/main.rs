@@ -1,6 +1,9 @@
-use std::{sync::{Arc, Mutex}, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
-use rustfied::sensor::{BikeSensor, UartSensor, I2CSensor};
+use rustfied::sensor::{BikeSensor, I2CSensor, UartSensor};
 
 use tokio::sync::Notify;
 
@@ -12,12 +15,11 @@ const SERVER_URL: &str = "http://localhost:3001";
 
 #[tokio::main]
 async fn main() {
-
     let socket = ClientBuilder::new(SERVER_URL)
-     .namespace("/")
-     .connect()
-     .await
-     .expect("Connection failed");
+        .namespace("/")
+        .connect()
+        .await
+        .expect("Connection failed");
 
     let sensor = Arc::new(BikeSensor::new("rust_raw_data.txt"));
     let notify = Arc::new(Notify::new());
@@ -38,7 +40,7 @@ async fn main() {
 
     tokio::task::spawn_blocking(move || {
         i2c_sensor_task(i2c_sensor, i2c_notify);
-    }); 
+    });
 
     let file_handler = tokio::spawn(async move {
         file_task(file_sensor_clone, notify).await;
@@ -49,13 +51,11 @@ async fn main() {
     });
 
     let _ = tokio::join!(file_handler, network_handler);
-
-
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
-    let port_name = "/dev/ttyUSB0";
-    let baud_rate = 9600;
+    let port_name = "/dev/serial0";
+    let baud_rate = 115200;
 
     let port = serialport::new(port_name, baud_rate)
         .timeout(Duration::from_secs(10))
@@ -65,22 +65,25 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
         Ok(mut port) => {
             let mut buff_check: Vec<u8> = vec![0; 2];
             loop {
-                port.read_exact(&mut buff_check).expect(" --- IMPROVE ERROR HANDLING --- ");
+                port.read_exact(&mut buff_check)
+                    .expect(" --- IMPROVE ERROR HANDLING --- ");
+                // println!("Buff check: {:02x?}", buff_check);
                 if buff_check.starts_with(&[0x55, 0x51]) {
                     let mut uart_lock = uart_sensor.lock().unwrap();
-                    port.read_exact(&mut uart_lock.buffer[2..]).expect(" --- IMPROVE ERROR HANDLING --- ");
+                    port.read_exact(&mut uart_lock.buffer[2..])
+                        .expect(" --- IMPROVE ERROR HANDLING --- ");
+                    println!("Buff: {:02x?}", uart_lock.buffer);
                     uart_lock.update().expect("Failed to update uart"); // Still need to improve error handling
-
-                    uart_lock.is_ready = true; 
+                    uart_lock.is_ready = true;
                     notification.notify_waiters();
-                } 
+                }
             }
         }
         Err(e) => {
             eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
             ::std::process::exit(1);
         }
-    } 
+    }
 }
 
 fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>) {
@@ -88,11 +91,11 @@ fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>)
         {
             let mut i2c_lock = i2c_sensor.lock().unwrap();
             i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
-            
+
             i2c_lock.is_ready = true;
             notification.notify_waiters();
         }
-        
+
         std::thread::sleep(Duration::from_millis(1));
     }
 }
@@ -104,7 +107,11 @@ async fn file_task(bike_sensor: Arc<BikeSensor>, notification: Arc<Notify>) {
     }
 }
 
-async fn network_task(bike_sensor: Arc<BikeSensor>, notification: Arc<Notify>, socket: rust_socketio::asynchronous::Client) {
+async fn network_task(
+    bike_sensor: Arc<BikeSensor>,
+    notification: Arc<Notify>,
+    socket: rust_socketio::asynchronous::Client,
+) {
     let duration = Duration::from_millis(250); // Send data aprox. every 250ms
     let mut interval = tokio::time::interval(duration);
 
@@ -118,12 +125,15 @@ async fn network_task(bike_sensor: Arc<BikeSensor>, notification: Arc<Notify>, s
         .send()
         .await
         .expect("Failed to hit /button_pressed route");
-    
+
     loop {
         notification.notified().await;
         interval.tick().await;
 
         let sensor_json = bike_sensor.get_json().expect("Failed to parse to json");
-        socket.emit("send", sensor_json).await.expect("Server unreachable");
+        socket
+            .emit("send", sensor_json)
+            .await
+            .expect("Server unreachable");
     }
 }
