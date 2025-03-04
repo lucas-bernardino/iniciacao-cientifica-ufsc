@@ -1,11 +1,10 @@
 use std::fmt::Write as _;
-use std::io::{Write, Read};
+use std::io::{Read, Write};
 use std::{
     fmt,
     str::FromStr,
     sync::{Arc, Mutex},
 };
-
 
 use chrono::prelude::*;
 use serde_json::json;
@@ -51,13 +50,6 @@ impl BikeSensor {
         }
     }
 
-    pub fn update(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
-        self.uart.lock()?.update()?;
-        self.i2c.lock()?.update()?;
-
-        Ok(())
-    }
-
     pub fn write_file(&self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
@@ -69,9 +61,21 @@ impl BikeSensor {
                 output
             });
 
-            self.file
-                .lock()?
-                .write_all(format!("{}{}{}{}{}\n", uart_str, i2c.steer, bluetooth.termocouple1, bluetooth.termocouple2, bluetooth.termocouple3).as_bytes())?;
+            let time: DateTime<Local> = Local::now();
+            let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
+
+            self.file.lock()?.write_all(
+                format!(
+                    "{}{}{}!{}@{}*{}\n",
+                    uart_str,
+                    time_str,
+                    i2c.steer,
+                    bluetooth.termocouple1,
+                    bluetooth.termocouple2,
+                    bluetooth.termocouple3
+                )
+                .as_bytes(),
+            )?;
 
             uart.is_ready = false;
             i2c.is_ready = false;
@@ -82,12 +86,13 @@ impl BikeSensor {
     pub fn get_json(&self) -> Result<serde_json::Value, Box<dyn std::error::Error + '_>> {
         let uart = self.uart.lock()?;
         let i2c = self.i2c.lock()?;
+        let bluetooth = self.bluetooth.lock()?;
 
         let mut counter = self.counter.lock()?;
 
         //'18:25:52.843023'
         let time: DateTime<Local> = Local::now();
-        let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second());
+        let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
 
         let json = json!({
             "id": *counter,
@@ -111,9 +116,9 @@ impl BikeSensor {
             "lat": 0.0,
             "press_ar": 0.0,
             "altitude": 0.0,
-            "termopar1": 0.0,
-            "termopar2": 0.0,
-            "termopar3": 0.0,
+            "termopar1": bluetooth.termocouple1,
+            "termopar2": bluetooth.termocouple2,
+            "termopar3": bluetooth.termocouple3,
             "Horario" : time_str
         });
 
@@ -193,8 +198,7 @@ impl fmt::Display for I2CSensor {
 impl I2CSensor {
     pub fn new() -> I2CSensor {
         let steer = String::from("1.0");
-        let i2c_device =
-            LinuxI2CDevice::new("/dev/i2c-1", 0x36).expect("Failed to connect to I2C");
+        let i2c_device = LinuxI2CDevice::new("/dev/i2c-1", 0x36).expect("Failed to connect to I2C");
         I2CSensor {
             i2c_device,
             steer,
@@ -231,9 +235,10 @@ pub struct BluetoothSensor {
 
 impl BluetoothSensor {
     pub fn new() -> BluetoothSensor {
-        
         let mut bluetooth_conn = BtSocket::new(BtProtocol::RFCOMM).unwrap();
-        bluetooth_conn.connect(BtAddr::from_str("98:DA:50:02:E3:9E").unwrap()).unwrap();
+        bluetooth_conn
+            .connect(BtAddr::from_str("98:DA:50:02:E3:9E").unwrap())
+            .unwrap();
 
         BluetoothSensor {
             bluetooth_conn,
