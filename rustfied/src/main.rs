@@ -1,6 +1,5 @@
 use std::{
     io::Read,
-    str::FromStr,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -13,10 +12,7 @@ use rust_socketio::asynchronous::ClientBuilder;
 
 use serde_json::json;
 
-use bluetooth_serial_port::{BtAddr, BtProtocol, BtSocket};
-
 const SERVER_URL: &str = "http://localhost:3001";
-const I2C_ADDRESS: u16 = 0x36;
 
 #[tokio::main]
 async fn main() {
@@ -39,7 +35,6 @@ async fn main() {
     let uart_notify = Arc::clone(&notify);
     let i2c_notify = Arc::clone(&notify);
     let notify_clone = Arc::clone(&notify);
-    let bluetooth_notify = Arc::clone(&notify);
 
     tokio::task::spawn_blocking(move || {
         uart_sensor_task(uart_sensor, uart_notify);
@@ -47,10 +42,6 @@ async fn main() {
 
     tokio::task::spawn_blocking(move || {
         i2c_sensor_task(i2c_sensor, i2c_notify);
-    });
-
-    tokio::task::spawn_blocking(move || {
-        bluetooth_sensor_task(bluetooth_sensor);
     });
 
     let file_handler = tokio::spawn(async move {
@@ -61,7 +52,12 @@ async fn main() {
         network_task(network_clone, notify_clone, socket).await;
     });
 
-    let _ = tokio::join!(file_handler, network_handler);
+    let bluetooth_handler = tokio::spawn(async move {
+        bluetooth_sensor_task(bluetooth_sensor).await;
+    });
+
+    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler);
+
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
@@ -98,7 +94,6 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
 }
 
 fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>) {
-    std::thread::sleep(Duration::from_millis(100));
     loop {
         {
             let mut i2c_lock = i2c_sensor.lock().unwrap();
@@ -107,17 +102,17 @@ fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>)
             i2c_lock.is_ready = true;
             notification.notify_waiters();
         }
-
         std::thread::sleep(Duration::from_millis(1));
     }
 }
 
-fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
+async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
     loop {
-        //let mut bluetooth_lock = bluetooth_sensor.lock().unwrap();
-        std::thread::sleep(Duration::from_millis(250));
-        //bluetooth_lock.update();
-        dbg!("After update");
+        {
+            let mut bluetooth_lock = bluetooth_sensor.lock().unwrap();
+            bluetooth_lock.update();
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;    
     }
 }
 

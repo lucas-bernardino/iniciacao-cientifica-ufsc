@@ -11,7 +11,7 @@ use chrono::prelude::*;
 use serde_json::json;
 
 use i2cdev::core::*;
-use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
+use i2cdev::linux::LinuxI2CDevice;
 
 use crate::utils::{clean_accel, clean_angle, clean_vel};
 
@@ -42,7 +42,7 @@ impl BikeSensor {
         BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
             i2c: Arc::new(Mutex::new(I2CSensor::new())),
-            bluetooth: Arc::new(Mutex::new((BluetoothSensor::new()))),
+            bluetooth: Arc::new(Mutex::new(BluetoothSensor::new())),
             file: Arc::new(Mutex::new(
                 std::fs::File::create(file_name)
                     .expect("Failed to create file with path the given path"),
@@ -61,7 +61,7 @@ impl BikeSensor {
     pub fn write_file(&self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
-        let mut bluetooth = self.bluetooth.lock()?;
+        let bluetooth = self.bluetooth.lock()?;
 
         if uart.is_ready && i2c.is_ready {
             let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
@@ -193,7 +193,7 @@ impl fmt::Display for I2CSensor {
 impl I2CSensor {
     pub fn new() -> I2CSensor {
         let steer = String::from("1.0");
-        let mut i2c_device =
+        let i2c_device =
             LinuxI2CDevice::new("/dev/i2c-1", 0x36).expect("Failed to connect to I2C");
         I2CSensor {
             i2c_device,
@@ -203,7 +203,7 @@ impl I2CSensor {
     }
 
     pub fn update(&mut self) -> Result<(), &'static str> {
-        let mut high_byte = (self
+        let high_byte = (self
             .i2c_device
             .smbus_read_byte_data(0x0C)
             .expect("Failed to read register 0x0C") as u16)
@@ -245,22 +245,16 @@ impl BluetoothSensor {
 
     pub fn update(&mut self) {
         let mut buffer = [0; 50];
-        dbg!("Before reading");
-        self.bluetooth_conn.read(&mut buffer[..]).unwrap();
+        let _ = self.bluetooth_conn.read(&mut buffer[..]).unwrap();
         let buffer_str = String::from_utf8(buffer.into()).unwrap();
-        dbg!("After reading: {}", &buffer_str);
         let vec_temps: Vec<_> = buffer_str
             .split(",")
             .take(3)
             .map(|item| item.trim())
             .collect();
 
-        dbg!("After vec_temps");
-        
         self.termocouple1 = vec_temps[0].parse::<f32>().unwrap_or(0.0);
         self.termocouple2 = vec_temps[1].parse::<f32>().unwrap_or(0.0);
         self.termocouple3 = vec_temps[2].parse::<f32>().unwrap_or(0.0);
-        
-        dbg!("End of function");
     }
 }
