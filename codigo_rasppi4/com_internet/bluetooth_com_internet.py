@@ -44,6 +44,10 @@ dados_package = {}
 contador_botao = 0
 flag_button_collection = False
 data_sensors = ""
+lock_socket_emit = threading.Lock()
+dados_package = {}
+
+TIME_WAITING_BETWEEN_SOCKET_EMIT = 0.25 # Secs
 
 # Every time the button is pressed, this function is called.
 # It toggles the flag so that no more data is received until the button is pressed again.
@@ -155,6 +159,7 @@ bluetooth_buffer = ""
 bluetooth_lock = threading.Lock()
 
 
+
 def bluetooth_thread():
     global bluetooth_buffer
     while True:
@@ -203,6 +208,7 @@ def angle_thread():
     global contador
     global dados_package
     global bluetooth_buffer
+    global dados_package
 
     angle_degrees = "111.11"
 
@@ -227,7 +233,7 @@ def angle_thread():
         except OSError:
             print("Modulo de estercamento com problemas... Salvando 111.11 como valor padrao")
             angle_degrees = "111.11"
-        finally:    
+        finally:
             if len(data_sensors) == 176:
 
                 if not interrupt_flag:
@@ -257,43 +263,50 @@ def angle_thread():
                         t1, t2, t3, _ = bluetooth_buffer
 
                     # This will be sent in the request body in order to be saved in the database as well as viewed in the client.
-                    dados_package = {
-                        "id": contador,
-                        "acel_x": acel_x,
-                        "acel_y": acel_y,
-                        "acel_z": acel_z,
-                        "vel_x": vel_x,
-                        "vel_y": vel_y,
-                        "vel_z": vel_z,
-                        "roll": roll,
-                        "pitch": pitch,
-                        "yaw": yaw,
-                        "mag_x": mag_x,
-                        "mag_y": mag_y,
-                        "mag_z": mag_z,
-                        "temp": temp,
-                        "esterc": angle_degrees,
-                        "rot": "{:.2f}".format(rpm),
-                        "veloc": velocidade_gps,
-                        "long": longitude,
-                        "lat": latitude,
-                        "press_ar": "{:.2f}".format(km_per_hour),
-                        "altitude": altitude,
-                        "termopar1": float(t1),
-                        "termopar2": float(t2),
-                        "termopar3": float(t3),
-                        "Horario" : (str(datetime.datetime.now())).split()[1]
-                    }
-                    sio.emit("send", dados_package)
-                    print(dados_package)
-                    contador += 1
-
+                    with lock_socket_emit:
+                        dados_package = {
+                            "id": contador,
+                            "acel_x": acel_x,
+                            "acel_y": acel_y,
+                            "acel_z": acel_z,
+                            "vel_x": vel_x,
+                            "vel_y": vel_y,
+                            "vel_z": vel_z,
+                            "roll": roll,
+                            "pitch": pitch,
+                            "yaw": yaw,
+                            "mag_x": mag_x,
+                            "mag_y": mag_y,
+                            "mag_z": mag_z,
+                            "temp": temp,
+                            "esterc": angle_degrees,
+                            "rot": "{:.2f}".format(rpm),
+                            "veloc": velocidade_gps,
+                            "long": longitude,
+                            "lat": latitude,
+                            "press_ar": "{:.2f}".format(km_per_hour),
+                            "altitude": altitude,
+                            "termopar1": float(t1),
+                            "termopar2": float(t2),
+                            "termopar3": float(t3),
+                            "Horario" : (str(datetime.datetime.now())).split()[1]
+                        }
+                        contador += 1
+                    # print(dados_package)
                 data_sensors = ""
 
     angle_degrees = ""
     data_sensors = ""
 
-
+def send_data_socket():
+    global dados_package
+    while True:
+        time.sleep(TIME_WAITING_BETWEEN_SOCKET_EMIT)
+        with lock_socket_emit:
+            if contador > 0:
+                print("Inicio da sio.emit")
+                sio.emit("send", dados_package)
+                print("Fim da sio.emit")
 # This infinite loop is responsible for dealing with what happens after the button is pressed
 while True:
     if interrupt_flag:
@@ -331,6 +344,8 @@ while True:
         thread1.start()
         thread2 = threading.Thread(target=bluetooth_thread)
         thread2.start()
+        thread_data_socket = threading.Thread(target=send_data_socket)
+        thread_data_socket.start()
 
         gps_thread()
 
