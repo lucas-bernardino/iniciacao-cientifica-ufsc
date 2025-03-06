@@ -47,7 +47,7 @@ data_sensors = ""
 lock_socket_emit = threading.Lock()
 dados_package = {}
 
-TIME_WAITING_BETWEEN_SOCKET_EMIT = 0.25 # Secs
+TIME_WAITING_BETWEEN_SOCKET_EMIT = 0.25  # Secs
 
 # Every time the button is pressed, this function is called.
 # It toggles the flag so that no more data is received until the button is pressed again.
@@ -159,7 +159,6 @@ bluetooth_buffer = ""
 bluetooth_lock = threading.Lock()
 
 
-
 def bluetooth_thread():
     global bluetooth_buffer
     while True:
@@ -231,7 +230,8 @@ def angle_thread():
             angle_degrees = (raw_angle & 0xFFF) * 0.08789
             angle_degrees = "{:.2f}".format(angle_degrees)
         except OSError:
-            print("Modulo de estercamento com problemas... Salvando 111.11 como valor padrao")
+            print(
+                "Modulo de estercamento com problemas... Salvando 111.11 como valor padrao")
             angle_degrees = "111.11"
         finally:
             if len(data_sensors) == 176:
@@ -247,6 +247,8 @@ def angle_thread():
 
                 if len(data_sensors) > 20:
                     calculate_speed(32)
+                    hall_data = "#{:.2f}${:.2f}".format(rpm, km_per_hour)
+                    data_sensors += hall_data
                     acel_x, acel_y, acel_z, temp = handleSensor1(
                         data_sensors[0:22])
                     vel_x, vel_y, vel_z = handleSensor2(data_sensors[22:44])
@@ -262,7 +264,9 @@ def angle_thread():
                     else:
                         t1, t2, t3, _ = bluetooth_buffer
 
-                    # This will be sent in the request body in order to be saved in the database as well as viewed in the client.
+                    data_sensors += "!{}@{}*{}".format(t1, t2, t3)
+                    arquivo.write(data_sensors + "\n")
+
                     with lock_socket_emit:
                         dados_package = {
                             "id": contador,
@@ -289,7 +293,7 @@ def angle_thread():
                             "termopar1": float(t1),
                             "termopar2": float(t2),
                             "termopar3": float(t3),
-                            "Horario" : (str(datetime.datetime.now())).split()[1]
+                            "Horario": (str(datetime.datetime.now())).split()[1]
                         }
                         contador += 1
                     # print(dados_package)
@@ -297,6 +301,7 @@ def angle_thread():
 
     angle_degrees = ""
     data_sensors = ""
+
 
 def send_data_socket():
     global dados_package
@@ -307,6 +312,8 @@ def send_data_socket():
                 print("Inicio da sio.emit")
                 sio.emit("send", dados_package)
                 print("Fim da sio.emit")
+
+
 # This infinite loop is responsible for dealing with what happens after the button is pressed
 while True:
     if interrupt_flag:
