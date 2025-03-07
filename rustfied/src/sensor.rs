@@ -62,11 +62,11 @@ impl BikeSensor {
             });
 
             let time: DateTime<Local> = Local::now();
-            let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
-
+            let time_str = format!("{}:{}:{}1111111", time.hour(), time.minute(), time.second(),);
+            // #0.00$0.00
             self.file.lock()?.write_all(
                 format!(
-                    "{}{}{}!{}@{}*{}\n",
+                    "{}{}{}#0.00$0.00!{}@{}*{}\n",
                     uart_str,
                     time_str,
                     i2c.steer,
@@ -259,7 +259,16 @@ impl BluetoothSensor {
             .collect();
 
         self.termocouple1 = vec_temps[0].parse::<f32>().unwrap_or(0.0);
+        if self.termocouple1.is_nan() {
+            self.termocouple1 = 0.0
+        };
         self.termocouple2 = vec_temps[1].parse::<f32>().unwrap_or(0.0);
+        if self.termocouple2.is_nan() {
+            self.termocouple2 = 0.0
+        };
         self.termocouple3 = vec_temps[2].parse::<f32>().unwrap_or(0.0);
+        if self.termocouple3.is_nan() {
+            self.termocouple3 = 0.0
+        }
     }
 }
