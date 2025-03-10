@@ -516,7 +516,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 20;
+                          chartColumnOption = 22;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -535,7 +535,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 21;
+                          chartColumnOption = 23;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -554,7 +554,7 @@ class _ChartState extends State<Chart> {
                   ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          chartColumnOption = 22;
+                          chartColumnOption = 24;
                           isButtonPressedGroup = isButtonPressedGroup
                               .map(
                                 (e) => false,
@@ -612,8 +612,8 @@ Widget buildChartIndividual(
 
   var time_column = COLUMNS.HOUR.index;
 
-  double maxYAxis = csvData[1][value_column] as double;
-  double minYAxis = csvData[1][value_column] as double;
+  double maxYAxis = csvData[1][value_column].toDouble();
+  double minYAxis = csvData[1][value_column].toDouble();
   int csvLength = 0;
   double totalSum = 0;
 
@@ -629,11 +629,11 @@ Widget buildChartIndividual(
         _dataPointsGps.add(DataPointsGPS(lat, long));
         continue;
       }
-      if (item[value_column] as double > maxYAxis) {
-        maxYAxis = item[value_column] as double;
+      if (item[value_column].toDouble() > maxYAxis) {
+        maxYAxis = item[value_column].toDouble();
       }
-      if (item[value_column] as double < minYAxis) {
-        minYAxis = item[value_column] as double;
+      if (item[value_column].toDouble() < minYAxis) {
+        minYAxis = item[value_column].toDouble();
       }
       String rawDateTime = item[time_column].toString();
       int hour = int.parse(rawDateTime.substring(0, 2));
@@ -642,7 +642,7 @@ Widget buildChartIndividual(
       int miliseconds = int.parse(rawDateTime.substring(9, 11));
       DateTime dateTime = DateTime(0, 0, 0, hour, minutes, seconds, miliseconds);
       _dataPoints.add(DataPoints(dateTime, item[value_column]));
-      totalSum += item[value_column] as double;
+      totalSum += item[value_column].toDouble();
       csvLength += 1;
     } catch (e) {
       print("DEU ERRO: ${e}");
@@ -807,7 +807,7 @@ Widget buildChartGroup(
     values_column = [4, 5, 6];
   }
   else if (pressedButtonOption[3] == true) {
-    values_column = [20, 21, 22];
+    values_column = [22, 23, 24];
   }
 
 
@@ -1069,11 +1069,11 @@ List<String> getInfoCard(int value_column) {
       return CARD_INFO_GROUP[5];
     case 16:
       return CARD_INFO_GROUP[6];
-    case 20:
-      return CARD_INFO_GROUP[7];
-    case 21:
-      return CARD_INFO_GROUP[8];
     case 22:
+      return CARD_INFO_GROUP[7];
+    case 23:
+      return CARD_INFO_GROUP[8];
+    case 24:
       return CARD_INFO_GROUP[9];
   }
 
