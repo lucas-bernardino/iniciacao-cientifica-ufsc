@@ -136,26 +136,27 @@ bluetooth_buffer = "!{}@{}*{}".format(0.0, 0.0, 0.0)
 # Create a Bluetooth socket
 
 ###########
-# sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-# sock.connect((target_address, port))
-#
-# bluetooth_buffer = ""
-# bluetooth_lock = threading.Lock()
-#
-#
-# def bluetooth_thread():
-#     global bluetooth_buffer
-#     while True:
-#         try:
-#             bluetooth_data = str(sock.recv(1024)).replace(
-#                 "b", "").replace(r"'", "").replace(r"\r\n", "").split(',')
-#             bluetooth_buffer = "!{}@{}*{}".format(bluetooth_data[0].strip(
-#             ), bluetooth_data[1].strip(), bluetooth_data[2].strip())
-#         except Exception as e:
-#             print("Deu excecao na thread bluetooth: ", e)
-#
+sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+sock.connect((target_address, port))
+
+bluetooth_buffer = ""
+bluetooth_lock = threading.Lock()
+
+
+def bluetooth_thread():
+    global bluetooth_buffer
+    while True:
+        try:
+            bluetooth_data = str(sock.recv(1024)).replace(
+                "b", "").replace(r"'", "").replace(r"\r\n", "").split(',')
+            bluetooth_buffer = "!{}@{}*{}".format(bluetooth_data[0].strip(
+            ), bluetooth_data[1].strip(), bluetooth_data[2].strip())
+        except Exception as e:
+            print("Deu excecao na thread bluetooth: ", e)
+
 ###########
 # This is the piece of code responsible for receiving the GPS Sensor data.
+
 
 raw_data_lock = threading.Lock()
 display_shared_buff = ()
@@ -261,8 +262,10 @@ def angle_thread():
 
 
 def show_data_display():
-    font = ImageFont.truetype(
+    big_font = ImageFont.truetype(
         "/usr/local/share/fonts/MononokiNerdFont-Bold.ttf", 22)
+    small_font = ImageFont.truetype(
+        "/usr/local/share/fonts/MononokiNerdFont-Bold.ttf", 15)
     while True:
         sleep(0.1)
         with canvas(display) as draw:
@@ -271,14 +274,17 @@ def show_data_display():
                 velocidade_gps = handleSensor7(velocidade_gps)
 
                 velocidade_hall = display_shared_buff[1]
+                current_time = (str(datetime.datetime.now())).split()[1][:8]
                 draw.text(
-                    (0, 0), "GPS", fill="green", font=font)
+                    (15, 0), "GPS", fill="green", font=small_font)
                 draw.text(
-                    (0, 30), f"{velocidade_gps:.2f}", fill="green", font=font)
+                    (0, 20), f"{velocidade_gps:.2f}", fill="green", font=big_font)
                 draw.text(
-                    (70, 0), "HALL", fill="blue", font=font)
+                    (82, 0), "HALL", fill="blue", font=small_font)
                 draw.text(
-                    (70, 30), f"{velocidade_hall:.2f}", fill="blue", font=font)
+                    (70, 20), f"{velocidade_hall:.2f}", fill="blue", font=big_font)
+                draw.text((28, 48), f"{current_time}",
+                          fill="blue", font=small_font)
 
 
 # This infinite loop is responsible for dealing with what happens after the button is pressed
@@ -317,8 +323,8 @@ while True:
         thread1 = threading.Thread(target=angle_thread)
         thread1.start()
         #########
-        # thread2 = threading.Thread(target=bluetooth_thread)
-        # thread2.start()
+        thread2 = threading.Thread(target=bluetooth_thread)
+        thread2.start()
         #########
         thread_display = threading.Thread(target=show_data_display)
         thread_display.start()
