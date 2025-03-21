@@ -46,7 +46,7 @@ async fn main() {
     button_pin
         .set_async_interrupt(
             Trigger::FallingEdge,
-            Some(Duration::from_millis(250)),
+            Some(Duration::from_millis(50)),
             interrupt_callback,
         )
         .expect("Failed to set interrupt");
@@ -66,11 +66,9 @@ async fn main() {
     let network_handler = tokio::spawn(async move {
         network_task(network_clone, notify_clone, is_capturing_data_network_clone).await;
     });
-
     let bluetooth_handler = tokio::spawn(async move {
         bluetooth_sensor_task(bluetooth_sensor).await;
     });
-
     let _ = tokio::join!(file_handler, network_handler, bluetooth_handler);
 }
 
