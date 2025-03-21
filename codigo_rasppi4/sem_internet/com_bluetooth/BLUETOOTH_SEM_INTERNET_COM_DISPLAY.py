@@ -267,24 +267,28 @@ def show_data_display():
     small_font = ImageFont.truetype(
         "/usr/local/share/fonts/MononokiNerdFont-Bold.ttf", 15)
     while True:
-        sleep(0.1)
-        with canvas(display) as draw:
-            with raw_data_lock:
-                velocidade_gps = display_shared_buff[0]
-                velocidade_gps = handleSensor7(velocidade_gps)
+        try:
+            sleep(0.1)
+            with canvas(display) as draw:
+                with raw_data_lock:
+                    velocidade_gps = display_shared_buff[0]
+                    velocidade_gps = handleSensor7(velocidade_gps)
 
-                velocidade_hall = display_shared_buff[1]
-                current_time = (str(datetime.datetime.now())).split()[1][:8]
-                draw.text(
-                    (15, 0), "GPS", fill="green", font=small_font)
-                draw.text(
-                    (0, 20), f"{velocidade_gps:.2f}", fill="green", font=big_font)
-                draw.text(
-                    (82, 0), "HALL", fill="blue", font=small_font)
-                draw.text(
-                    (70, 20), f"{velocidade_hall:.2f}", fill="blue", font=big_font)
-                draw.text((28, 48), f"{current_time}",
-                          fill="blue", font=small_font)
+                    velocidade_hall = display_shared_buff[1]
+                    current_time = (
+                        str(datetime.datetime.now())).split()[1][:8]
+                    draw.text(
+                        (15, 0), "GPS", fill="green", font=small_font)
+                    draw.text(
+                        (0, 20), f"{velocidade_gps:.2f}", fill="green", font=big_font)
+                    draw.text(
+                        (82, 0), "HALL", fill="blue", font=small_font)
+                    draw.text(
+                        (70, 20), f"{velocidade_hall:.2f}", fill="blue", font=big_font)
+                    draw.text((28, 48), f"{current_time}",
+                              fill="blue", font=small_font)
+        except Exception as e:
+            print("Problemas com o display...")
 
 
 # This infinite loop is responsible for dealing with what happens after the button is pressed
