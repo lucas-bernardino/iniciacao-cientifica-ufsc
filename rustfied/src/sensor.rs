@@ -12,7 +12,7 @@ use serde_json::json;
 use i2cdev::core::*;
 use i2cdev::linux::LinuxI2CDevice;
 
-use crate::utils::{clean_accel, clean_angle, clean_vel};
+use crate::utils::{clean_accel, clean_angle, clean_vel, clean_gps_vel};
 
 use bluetooth_serial_port::{BtAddr, BtProtocol, BtSocket};
 
@@ -56,7 +56,7 @@ impl BikeSensor {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
         let bluetooth = self.bluetooth.lock()?;
-        let hall = self.hall.lock()?;
+        let mut hall = self.hall.lock()?;
 
         if uart.is_ready && i2c.is_ready {
             let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
@@ -67,8 +67,10 @@ impl BikeSensor {
             let time: DateTime<Local> = Local::now();
             let time_str = format!("{}:{}:{}1111111", time.hour(), time.minute(), time.second(),);
 
+            hall.calculate_speed();
+
             let hall_speed = hall.km_per_hour;
-            let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f64;
+            let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f32;
             if hall_rpm.is_infinite() {
                 hall_rpm = 0.0;
             }
@@ -97,7 +99,7 @@ impl BikeSensor {
         let uart = self.uart.lock()?;
         let i2c = self.i2c.lock()?;
         let bluetooth = self.bluetooth.lock()?;
-        let hall = self.hall.lock()?;
+        let mut hall = self.hall.lock()?;
 
         let mut counter = self.counter.lock()?;
 
@@ -105,12 +107,14 @@ impl BikeSensor {
         let time: DateTime<Local> = Local::now();
         let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
 
+
+        hall.calculate_speed();
         let hall_speed = hall.km_per_hour;
-        let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f64;
+        let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f32;
         if hall_rpm.is_infinite() {
             hall_rpm = 0.0;
         }
-        
+
         let json = json!({
             "id": *counter,
             "acel_x": uart.acceleration[0],
@@ -142,6 +146,15 @@ impl BikeSensor {
         *counter += 1;
         Ok(json)
     }
+
+
+    pub fn get_display_data(&self) -> Result<[f32; 2], Box<dyn std::error::Error + '_>> {
+        let uart = self.uart.lock()?;
+        let mut hall = self.hall.lock()?;
+        hall.calculate_speed();
+
+        Ok([uart.gps_vel, hall.km_per_hour])
+    }
 }
 
 pub struct UartSensor {
@@ -150,6 +163,8 @@ pub struct UartSensor {
     pub acceleration: [f32; 3],
     pub angle_velocity: [f32; 3],
     pub angle: [f32; 3],
+
+    pub gps_vel: f32,
 
     pub is_ready: bool,
 }
@@ -183,6 +198,7 @@ impl UartSensor {
             acceleration: [0.0; 3],
             angle_velocity: [0.0; 3],
             angle: [0.0; 3],
+            gps_vel: 0.0,
             is_ready: true,
         }
     }
@@ -191,10 +207,12 @@ impl UartSensor {
         let accel_raw = &self.buffer[0..11];
         let angle_vel_raw = &self.buffer[11..22];
         let angle_raw = &self.buffer[22..33];
+        let gps_vel_raw = &self.buffer[66..77];
 
         self.acceleration = clean_accel(accel_raw)?;
         self.angle_velocity = clean_vel(angle_vel_raw)?;
         self.angle = clean_angle(angle_raw)?;
+        self.gps_vel = clean_gps_vel(gps_vel_raw)?;
 
         Ok(())
     }
@@ -292,10 +310,10 @@ impl BluetoothSensor {
 
 #[derive(Debug, Clone)]
 pub struct HallSensor {
-    wheel_radius: f64,
+    wheel_radius: f32,
     pub elapse: std::time::Duration,
     last_time: std::time::Instant,
-    pub km_per_hour: f64,
+    pub km_per_hour: f32,
 }
 
 impl HallSensor {
@@ -316,10 +334,10 @@ impl HallSensor {
 
     pub fn calculate_speed(&mut self) {
         if self.elapse.as_millis() > 0 {
-            let rpm = 60000.0 / self.elapse.as_millis() as f64;
-            let circ_cm = 2.0 * std::f64::consts::PI * self.wheel_radius;
+            let rpm = 60000.0 / self.elapse.as_millis() as f32;
+            let circ_cm = 2.0 * std::f32::consts::PI * self.wheel_radius;
             let dist_km = circ_cm / 100000.0;
-            let km_per_sec = dist_km / (self.elapse.as_millis() as f64 / 1000.0);
+            let km_per_sec = dist_km / (self.elapse.as_millis() as f32 / 1000.0);
             self.km_per_hour = km_per_sec * 3600.0;
         }
     }

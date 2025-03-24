@@ -5,7 +5,7 @@ use std::{
 };
 
 use rppal::gpio::{Event, Gpio, Trigger};
-use rustfied::sensor::{BikeSensor, BluetoothSensor, HallSensor, I2CSensor, UartSensor};
+use rustfied::sensor::{BikeSensor, BluetoothSensor, I2CSensor, UartSensor};
 
 use tokio::sync::Notify;
 
@@ -17,11 +17,10 @@ use embedded_graphics::{
     mono_font::{ascii::FONT_10X20, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{Circle, PrimitiveStyleBuilder, Rectangle, Triangle},
     text::{Baseline, Text},
 };
-use linux_embedded_hal::I2cdev;
-use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
+
+use rustfied::utils::init_ssd1306_display;
 const SERVER_URL: &str = "http://localhost:3001";
 
 #[tokio::main]
@@ -34,6 +33,7 @@ async fn main() {
 
     let file_sensor_clone = Arc::clone(&sensor);
     let network_clone = Arc::clone(&sensor);
+    let display_sensor_clone = Arc::clone(&sensor);
 
     let uart_sensor = Arc::clone(&sensor.uart);
     let i2c_sensor = Arc::clone(&sensor.i2c);
@@ -93,7 +93,7 @@ async fn main() {
     });
 
     let display_handler = tokio::spawn(async move {
-        display_task().await;
+        display_task(display_sensor_clone).await;
     });
 
     let _ = tokio::join!(
@@ -160,13 +160,8 @@ async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
     }
 }
 
-async fn display_task() {
-    let i2c = I2cdev::new("/dev/i2c-1").unwrap();
-
-    let interface = I2CDisplayInterface::new(i2c);
-    let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-        .into_buffered_graphics_mode();
-    disp.init().unwrap();
+async fn display_task(bike_sensor: Arc<BikeSensor>) {
+    let mut disp = init_ssd1306_display();
 
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_10X20)
@@ -175,15 +170,28 @@ async fn display_task() {
 
     disp.flush().unwrap();
 
-    let mut cont = 0;
     loop {
-        disp.clear(BinaryColor::Off).unwrap();
-        let text = format!("Hello Rust! {}", cont);
-        Text::with_baseline(&text, Point::new(0, 16), text_style, Baseline::Top)
-            .draw(&mut disp)
-            .unwrap();
-        cont += 1;
-        std::thread::sleep(Duration::from_millis(500));
+        {
+            disp.clear(BinaryColor::Off).unwrap();
+            let display_data = bike_sensor.get_display_data().unwrap();
+            let text1 = format!("GPS");
+            let text2 = format!("{:.2}", display_data[0]);
+            let text3 = format!("HALL");
+            let text4 = format!("{:.2}", display_data[1]);
+            Text::with_baseline(&text1, Point::new(15, 0), text_style, Baseline::Top)
+                .draw(&mut disp)
+                .unwrap();
+            Text::with_baseline(&text2, Point::new(0, 20), text_style, Baseline::Top)
+                .draw(&mut disp)
+                .unwrap();
+            Text::with_baseline(&text3, Point::new(82, 0), text_style, Baseline::Top)
+                .draw(&mut disp)
+                .unwrap();
+            Text::with_baseline(&text4, Point::new(70, 20), text_style, Baseline::Top)
+                .draw(&mut disp)
+                .unwrap();
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
         disp.flush().unwrap();
     }
 }
