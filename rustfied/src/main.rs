@@ -44,7 +44,6 @@ async fn main() {
     let notify_clone = Arc::clone(&notify);
 
     let sensor_speed_clone_interrupt = Arc::clone(&sensor.hall);
-    let sensor_speed_clone_task = Arc::clone(&sensor.hall);
 
     let is_capturing_data = Arc::new(Mutex::new(false));
     let is_capturing_data_file_clone = Arc::clone(&is_capturing_data);
@@ -97,16 +96,11 @@ async fn main() {
         display_task().await;
     });
 
-    let hall_handler = tokio::spawn(async move {
-        hall_task(sensor_speed_clone_task).await;
-    });
-
     let _ = tokio::join!(
         file_handler,
         network_handler,
         bluetooth_handler,
         display_handler,
-        hall_handler
     );
 }
 
@@ -191,22 +185,6 @@ async fn display_task() {
         cont += 1;
         std::thread::sleep(Duration::from_millis(500));
         disp.flush().unwrap();
-    }
-}
-
-async fn hall_task(speed_sensor: Arc<Mutex<HallSensor>>) {
-    loop {
-        {
-            let mut data_speed = speed_sensor.lock().unwrap();
-            data_speed.calculate_speed();
-            println!(
-                "Speed: {:.2} km/h, RPM: {:.2}",
-                data_speed.km_per_hour,
-                60000.0 / data_speed.elapse.as_millis() as f64
-            );
-        }
-
-        tokio::time::sleep(Duration::from_millis(500)).await;
     }
 }
 

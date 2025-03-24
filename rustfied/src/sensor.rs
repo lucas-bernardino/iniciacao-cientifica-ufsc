@@ -56,6 +56,7 @@ impl BikeSensor {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
         let bluetooth = self.bluetooth.lock()?;
+        let hall = self.hall.lock()?;
 
         if uart.is_ready && i2c.is_ready {
             let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
@@ -65,13 +66,20 @@ impl BikeSensor {
 
             let time: DateTime<Local> = Local::now();
             let time_str = format!("{}:{}:{}1111111", time.hour(), time.minute(), time.second(),);
-            // #0.00$0.00
+
+            let hall_speed = hall.km_per_hour;
+            let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f64;
+            if hall_rpm.is_infinite() {
+                hall_rpm = 0.0;
+            }
             self.file.lock()?.write_all(
                 format!(
-                    "{}{}{}#0.00$0.00!{}@{}*{}\n",
+                    "{}{}{}#{:.2}${:.2}!{}@{}*{}\n",
                     uart_str,
                     time_str,
                     i2c.steer,
+                    hall_speed,
+                    hall_rpm,
                     bluetooth.termocouple1,
                     bluetooth.termocouple2,
                     bluetooth.termocouple3
@@ -89,6 +97,7 @@ impl BikeSensor {
         let uart = self.uart.lock()?;
         let i2c = self.i2c.lock()?;
         let bluetooth = self.bluetooth.lock()?;
+        let hall = self.hall.lock()?;
 
         let mut counter = self.counter.lock()?;
 
@@ -96,6 +105,12 @@ impl BikeSensor {
         let time: DateTime<Local> = Local::now();
         let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
 
+        let hall_speed = hall.km_per_hour;
+        let mut hall_rpm = 60000.0 / hall.elapse.as_millis() as f64;
+        if hall_rpm.is_infinite() {
+            hall_rpm = 0.0;
+        }
+        
         let json = json!({
             "id": *counter,
             "acel_x": uart.acceleration[0],
@@ -112,11 +127,11 @@ impl BikeSensor {
             "mag_z": 0.0,
             "temp": 0.0,
             "esterc": i2c.steer,
-            "rot": 0.0,
+            "rot": format!("{:.2}", hall_rpm),
             "veloc": 0.0,
             "long": 0.0,
             "lat": 0.0,
-            "press_ar": 0.0,
+            "press_ar": format!("{:.2}", hall_speed),
             "altitude": 0.0,
             "termopar1": bluetooth.termocouple1,
             "termopar2": bluetooth.termocouple2,
