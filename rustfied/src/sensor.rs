@@ -20,6 +20,7 @@ pub struct BikeSensor {
     pub uart: Arc<Mutex<UartSensor>>,
     pub i2c: Arc<Mutex<I2CSensor>>,
     pub bluetooth: Arc<Mutex<BluetoothSensor>>,
+    pub hall: Arc<Mutex<HallSensor>>,
     pub file: Arc<Mutex<std::fs::File>>,
 
     pub counter: Arc<Mutex<i32>>,
@@ -42,6 +43,7 @@ impl BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
             i2c: Arc::new(Mutex::new(I2CSensor::new())),
             bluetooth: Arc::new(Mutex::new(BluetoothSensor::new())),
+            hall: Arc::new(Mutex::new(HallSensor::new())),
             file: Arc::new(Mutex::new(
                 std::fs::File::create(file_name)
                     .expect("Failed to create file with path the given path"),
@@ -227,7 +229,6 @@ impl I2CSensor {
 
 pub struct BluetoothSensor {
     //bluetooth_conn: BtSocket,
-
     pub termocouple1: f32,
     pub termocouple2: f32,
     pub termocouple3: f32,
@@ -271,5 +272,40 @@ impl BluetoothSensor {
         if self.termocouple3.is_nan() {
             self.termocouple3 = 0.0
         }*/
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HallSensor {
+    wheel_radius: f64,
+    pub elapse: std::time::Duration,
+    last_time: std::time::Instant,
+    pub km_per_hour: f64,
+}
+
+impl HallSensor {
+    pub fn new() -> Self {
+        Self {
+            wheel_radius: 32.0,
+            elapse: std::time::Duration::ZERO,
+            last_time: std::time::Instant::now(),
+            km_per_hour: 0.0,
+        }
+    }
+
+    pub fn update(&mut self) {
+        let now = std::time::Instant::now();
+        self.elapse = now.duration_since(self.last_time);
+        self.last_time = now;
+    }
+
+    pub fn calculate_speed(&mut self) {
+        if self.elapse.as_millis() > 0 {
+            let rpm = 60000.0 / self.elapse.as_millis() as f64;
+            let circ_cm = 2.0 * std::f64::consts::PI * self.wheel_radius;
+            let dist_km = circ_cm / 100000.0;
+            let km_per_sec = dist_km / (self.elapse.as_millis() as f64 / 1000.0);
+            self.km_per_hour = km_per_sec * 3600.0;
+        }
     }
 }

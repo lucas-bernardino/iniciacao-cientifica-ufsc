@@ -5,7 +5,7 @@ use std::{
 };
 
 use rppal::gpio::{Event, Gpio, Trigger};
-use rustfied::sensor::{BikeSensor, BluetoothSensor, I2CSensor, UartSensor};
+use rustfied::sensor::{BikeSensor, BluetoothSensor, HallSensor, I2CSensor, UartSensor};
 
 use tokio::sync::Notify;
 
@@ -23,42 +23,6 @@ use embedded_graphics::{
 use linux_embedded_hal::I2cdev;
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 const SERVER_URL: &str = "http://localhost:3001";
-
-#[derive(Debug, Clone)]
-struct SpeedSensor {
-    pulse: u32,
-    elapse: std::time::Duration,
-    last_time: std::time::Instant,
-    km_per_hour: f64,
-}
-
-impl SpeedSensor {
-    fn new() -> Self {
-        Self {
-            pulse: 0,
-            elapse: std::time::Duration::ZERO,
-            last_time: std::time::Instant::now(),
-            km_per_hour: 0.0,
-        }
-    }
-
-    fn update(&mut self) {
-        let now = std::time::Instant::now();
-        self.elapse = now.duration_since(self.last_time);
-        self.last_time = now;
-        self.pulse += 1;
-    }
-
-    fn calculate_speed(&mut self, r_cm: f64) {
-        if self.elapse.as_millis() > 0 {
-            let rpm = 60000.0 / self.elapse.as_millis() as f64;
-            let circ_cm = 2.0 * std::f64::consts::PI * r_cm;
-            let dist_km = circ_cm / 100000.0;
-            let km_per_sec = dist_km / (self.elapse.as_millis() as f64 / 1000.0);
-            self.km_per_hour = km_per_sec * 3600.0;
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() {
@@ -79,9 +43,8 @@ async fn main() {
     let i2c_notify = Arc::clone(&notify);
     let notify_clone = Arc::clone(&notify);
 
-    let sensor_speed = Arc::new(Mutex::new(SpeedSensor::new()));
-    let sensor_speed_clone_interrupt = Arc::clone(&sensor_speed);
-    let sensor_speed_clone_task = Arc::clone(&sensor_speed);
+    let sensor_speed_clone_interrupt = Arc::clone(&sensor.hall);
+    let sensor_speed_clone_task = Arc::clone(&sensor.hall);
 
     let is_capturing_data = Arc::new(Mutex::new(false));
     let is_capturing_data_file_clone = Arc::clone(&is_capturing_data);
@@ -231,13 +194,11 @@ async fn display_task() {
     }
 }
 
-async fn hall_task(speed_sensor: Arc<Mutex<SpeedSensor>>) {
-    let wheel_radius_cm = 32.0;
-
+async fn hall_task(speed_sensor: Arc<Mutex<HallSensor>>) {
     loop {
         {
             let mut data_speed = speed_sensor.lock().unwrap();
-            data_speed.calculate_speed(wheel_radius_cm);
+            data_speed.calculate_speed();
             println!(
                 "Speed: {:.2} km/h, RPM: {:.2}",
                 data_speed.km_per_hour,
