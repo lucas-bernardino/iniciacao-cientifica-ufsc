@@ -20,9 +20,45 @@ use embedded_graphics::{
     primitives::{Circle, PrimitiveStyleBuilder, Rectangle, Triangle},
     text::{Baseline, Text},
 };
-use linux_embedded_hal::{I2cdev};
+use linux_embedded_hal::I2cdev;
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 const SERVER_URL: &str = "http://localhost:3001";
+
+#[derive(Debug, Clone)]
+struct SpeedSensor {
+    pulse: u32,
+    elapse: std::time::Duration,
+    last_time: std::time::Instant,
+    km_per_hour: f64,
+}
+
+impl SpeedSensor {
+    fn new() -> Self {
+        Self {
+            pulse: 0,
+            elapse: std::time::Duration::ZERO,
+            last_time: std::time::Instant::now(),
+            km_per_hour: 0.0,
+        }
+    }
+
+    fn update(&mut self) {
+        let now = std::time::Instant::now();
+        self.elapse = now.duration_since(self.last_time);
+        self.last_time = now;
+        self.pulse += 1;
+    }
+
+    fn calculate_speed(&mut self, r_cm: f64) {
+        if self.elapse.as_millis() > 0 {
+            let rpm = 60000.0 / self.elapse.as_millis() as f64;
+            let circ_cm = 2.0 * std::f64::consts::PI * r_cm;
+            let dist_km = circ_cm / 100000.0;
+            let km_per_sec = dist_km / (self.elapse.as_millis() as f64 / 1000.0);
+            self.km_per_hour = km_per_sec * 3600.0;
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -43,6 +79,10 @@ async fn main() {
     let i2c_notify = Arc::clone(&notify);
     let notify_clone = Arc::clone(&notify);
 
+    let sensor_speed = Arc::new(Mutex::new(SpeedSensor::new()));
+    let sensor_speed_clone_interrupt = Arc::clone(&sensor_speed);
+    let sensor_speed_clone_task = Arc::clone(&sensor_speed);
+
     let is_capturing_data = Arc::new(Mutex::new(false));
     let is_capturing_data_file_clone = Arc::clone(&is_capturing_data);
     let is_capturing_data_network_clone = Arc::clone(&is_capturing_data);
@@ -62,15 +102,12 @@ async fn main() {
         .expect("Failed to set interrupt");
 
     let hall_interrupt_callback = move |_: Event| {
-        dbg!("Hall changed state");
+        let mut data_speed = sensor_speed_clone_interrupt.lock().unwrap();
+        data_speed.update();
     };
 
     hall_pin
-        .set_async_interrupt(
-            Trigger::FallingEdge,
-            None,
-            hall_interrupt_callback,
-        )
+        .set_async_interrupt(Trigger::FallingEdge, None, hall_interrupt_callback)
         .expect("Failed to set interrupt");
 
     tokio::task::spawn_blocking(move || {
@@ -92,16 +129,22 @@ async fn main() {
     let bluetooth_handler = tokio::spawn(async move {
         bluetooth_sensor_task(bluetooth_sensor).await;
     });
-    
+
     let display_handler = tokio::spawn(async move {
         display_task().await;
     });
 
     let hall_handler = tokio::spawn(async move {
-        hall_task().await;
+        hall_task(sensor_speed_clone_task).await;
     });
 
-    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler, display_handler, hall_handler);
+    let _ = tokio::join!(
+        file_handler,
+        network_handler,
+        bluetooth_handler,
+        display_handler,
+        hall_handler
+    );
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
@@ -160,7 +203,6 @@ async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
     }
 }
 
-
 async fn display_task() {
     let i2c = I2cdev::new("/dev/i2c-1").unwrap();
 
@@ -173,9 +215,9 @@ async fn display_task() {
         .font(&FONT_10X20)
         .text_color(BinaryColor::On)
         .build();
-    
+
     disp.flush().unwrap();
-   
+
     let mut cont = 0;
     loop {
         disp.clear(BinaryColor::Off).unwrap();
@@ -189,9 +231,21 @@ async fn display_task() {
     }
 }
 
-async fn hall_task() {
+async fn hall_task(speed_sensor: Arc<Mutex<SpeedSensor>>) {
+    let wheel_radius_cm = 32.0;
+
     loop {
-        std::thread::sleep(Duration::from_millis(500));
+        {
+            let mut data_speed = speed_sensor.lock().unwrap();
+            data_speed.calculate_speed(wheel_radius_cm);
+            println!(
+                "Speed: {:.2} km/h, RPM: {:.2}",
+                data_speed.km_per_hour,
+                60000.0 / data_speed.elapse.as_millis() as f64
+            );
+        }
+
+        tokio::time::sleep(Duration::from_millis(500)).await;
     }
 }
 
