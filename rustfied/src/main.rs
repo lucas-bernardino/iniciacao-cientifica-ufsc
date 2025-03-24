@@ -27,6 +27,7 @@ const SERVER_URL: &str = "http://localhost:3001";
 #[tokio::main]
 async fn main() {
     let mut button_pin = Gpio::new().unwrap().get(26).unwrap().into_input_pullup();
+    let mut hall_pin = Gpio::new().unwrap().get(21).unwrap().into_input_pullup();
 
     let sensor = Arc::new(BikeSensor::new("rust_raw_data.txt"));
     let notify = Arc::new(Notify::new());
@@ -46,7 +47,7 @@ async fn main() {
     let is_capturing_data_file_clone = Arc::clone(&is_capturing_data);
     let is_capturing_data_network_clone = Arc::clone(&is_capturing_data);
 
-    let interrupt_callback = move |_: Event| {
+    let button_interrupt_callback = move |_: Event| {
         dbg!("Button pressed!");
         let mut guard = is_capturing_data.lock().unwrap();
         *guard = !(*guard); // toggle is_capturing_data
@@ -56,7 +57,19 @@ async fn main() {
         .set_async_interrupt(
             Trigger::FallingEdge,
             Some(Duration::from_millis(50)),
-            interrupt_callback,
+            button_interrupt_callback,
+        )
+        .expect("Failed to set interrupt");
+
+    let hall_interrupt_callback = move |_: Event| {
+        dbg!("Hall changed state");
+    };
+
+    hall_pin
+        .set_async_interrupt(
+            Trigger::FallingEdge,
+            None,
+            hall_interrupt_callback,
         )
         .expect("Failed to set interrupt");
 
@@ -84,7 +97,11 @@ async fn main() {
         display_task().await;
     });
 
-    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler, display_handler);
+    let hall_handler = tokio::spawn(async move {
+        hall_task().await;
+    });
+
+    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler, display_handler, hall_handler);
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
@@ -169,6 +186,12 @@ async fn display_task() {
         cont += 1;
         std::thread::sleep(Duration::from_millis(500));
         disp.flush().unwrap();
+    }
+}
+
+async fn hall_task() {
+    loop {
+        std::thread::sleep(Duration::from_millis(500));
     }
 }
 
