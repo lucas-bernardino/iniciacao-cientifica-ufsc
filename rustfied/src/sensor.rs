@@ -226,7 +226,7 @@ impl I2CSensor {
 }
 
 pub struct BluetoothSensor {
-    bluetooth_conn: BtSocket,
+    //bluetooth_conn: BtSocket,
 
     pub termocouple1: f32,
     pub termocouple2: f32,
@@ -235,13 +235,13 @@ pub struct BluetoothSensor {
 
 impl BluetoothSensor {
     pub fn new() -> BluetoothSensor {
-        let mut bluetooth_conn = BtSocket::new(BtProtocol::RFCOMM).unwrap();
+        /*let mut bluetooth_conn = BtSocket::new(BtProtocol::RFCOMM).unwrap();
         bluetooth_conn
             .connect(BtAddr::from_str("98:DA:50:02:E3:9E").unwrap())
-            .unwrap();
+            .unwrap();*/
 
         BluetoothSensor {
-            bluetooth_conn,
+            //bluetooth_conn,
             termocouple1: 0.0,
             termocouple2: 0.0,
             termocouple3: 0.0,
@@ -249,7 +249,8 @@ impl BluetoothSensor {
     }
 
     pub fn update(&mut self) {
-        let mut buffer = [0; 50];
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        /*let mut buffer = [0; 50];
         let _ = self.bluetooth_conn.read(&mut buffer[..]).unwrap();
         let buffer_str = String::from_utf8(buffer.into()).unwrap();
         let vec_temps: Vec<_> = buffer_str
@@ -269,6 +270,6 @@ impl BluetoothSensor {
         self.termocouple3 = vec_temps[2].parse::<f32>().unwrap_or(0.0);
         if self.termocouple3.is_nan() {
             self.termocouple3 = 0.0
-        }
+        }*/
     }
 }

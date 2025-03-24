@@ -13,6 +13,15 @@ use rust_socketio::asynchronous::ClientBuilder;
 
 use serde_json::json;
 
+use embedded_graphics::{
+    mono_font::{ascii::FONT_10X20, MonoTextStyleBuilder},
+    pixelcolor::BinaryColor,
+    prelude::*,
+    primitives::{Circle, PrimitiveStyleBuilder, Rectangle, Triangle},
+    text::{Baseline, Text},
+};
+use linux_embedded_hal::{I2cdev};
+use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 const SERVER_URL: &str = "http://localhost:3001";
 
 #[tokio::main]
@@ -66,10 +75,16 @@ async fn main() {
     let network_handler = tokio::spawn(async move {
         network_task(network_clone, notify_clone, is_capturing_data_network_clone).await;
     });
+
     let bluetooth_handler = tokio::spawn(async move {
         bluetooth_sensor_task(bluetooth_sensor).await;
     });
-    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler);
+    
+    let display_handler = tokio::spawn(async move {
+        display_task().await;
+    });
+
+    let _ = tokio::join!(file_handler, network_handler, bluetooth_handler, display_handler);
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
@@ -125,6 +140,35 @@ async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
             bluetooth_lock.update();
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+}
+
+
+async fn display_task() {
+    let i2c = I2cdev::new("/dev/i2c-1").unwrap();
+
+    let interface = I2CDisplayInterface::new(i2c);
+    let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
+    disp.init().unwrap();
+
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_10X20)
+        .text_color(BinaryColor::On)
+        .build();
+    
+    disp.flush().unwrap();
+   
+    let mut cont = 0;
+    loop {
+        disp.clear(BinaryColor::Off).unwrap();
+        let text = format!("Hello Rust! {}", cont);
+        Text::with_baseline(&text, Point::new(0, 16), text_style, Baseline::Top)
+            .draw(&mut disp)
+            .unwrap();
+        cont += 1;
+        std::thread::sleep(Duration::from_millis(500));
+        disp.flush().unwrap();
     }
 }
 
