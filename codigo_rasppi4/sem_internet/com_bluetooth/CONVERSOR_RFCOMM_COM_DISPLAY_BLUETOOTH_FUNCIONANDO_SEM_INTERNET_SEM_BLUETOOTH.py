@@ -192,7 +192,8 @@ def sensor_pressao_thread():
             pressao_buffer = ""
             pressao_buffer = f"~{current_voltage:.4f}"
         except Exception as e:
-            print("Deu excecao na thread bluetooth: ", e)
+            print("Deu problema na thread sensor pressao: ", e)
+            continue
 
 # Sensor de pressao
 ###
