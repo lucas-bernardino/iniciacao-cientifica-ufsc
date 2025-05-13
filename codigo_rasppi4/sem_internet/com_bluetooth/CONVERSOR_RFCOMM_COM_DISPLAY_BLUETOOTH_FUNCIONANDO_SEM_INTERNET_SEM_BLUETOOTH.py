@@ -1,244 +1,388 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+import time
+import threading
+import serial
+import binascii
+import RPi.GPIO as GPIO
+import datetime
+import requests
+import subprocess
+import multiprocessing
+import math
+import bluetooth
+from smbus2 import SMBus
+from handle_sensors_module import *
 
-/*
-Você deve implementar uma rede Perceptron, de uma única camada, para problemas de classificação binária
-(isto é, duas classes).
-*/
+from luma.core.interface.serial import i2c
+from luma.core.render import canvas
+from luma.oled.device import ssd1306
+from time import sleep
+from PIL import ImageFont
 
-#define ARR_SIZE(x)  ((int) sizeof(x) / sizeof((x)[0]))
+import board
+import busio
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
 
-// total number of rows of the input csv file used to train the nn
+import random
+import math
 
-
-// // if this is defined than the weights will be printed afther all the epochs
-#define VERBOSE
-
-
-float current_output(float* input, float* weights, int len_weights) {
-    /* ex:
-    input = {0, 1}
-    weights = {0, 0, 0}
-    len_weights = 3
-    */
-    float sum = weights[0];
-    for (int i = 0; i < (len_weights - 1); i++) {
-        sum += input[i] * weights[i+1];
-    }
-    return sum;
-}
-
-float activate_function(float output) {
-    if (output > 0) {
-        return 1.0;
-    }
-    return -1.0;
-}
-
-void update_weight(float* input, float* weight, float learning_rate, float desired_output, int len_weights, int iteration) {
-    
-    /*
-    we need to do this:
-    w(n+1) = w(n) + η(n) (d(n) – y(n)) x(n)
-
-    this function is basically doing that.
-    it calls current_output, that will get the sum of input x weights.
-    then activate_function is called on this sum, to get 1 or -1.
-    the factor is a variable that basically holds this expression η(n) * (d(n) – y(n)),
-    where n(n) is the learning_rate, d(n) is the desired_output passed by the caller and y(n) is the y.
-
-    to update the weights, we basically just update the weights (need to do it separetly since 
-    it doesn't involve input multiplication) and then we loop over each element in the weights array to update it.
-    */
-    
-    float output = current_output(input, weight, len_weights);
-    float y = activate_function(output);
-    float factor = learning_rate * (desired_output - y);
-
-    // update bias
-    weight[0] = weight[0] + factor;
-
-    // update rest of the weights
-    for (int i = 0; i < (len_weights - 1); i++) {
-        weight[i+1] = weight[i+1] + (factor * input[i]);
-    }
-}
+sensor_gps = serial.Serial("/dev/serial0", 115200, timeout=1)
+sensor_angulo = SMBus(1)
+display_connection = i2c(port=1, address=0x3C)
+display = ssd1306(display_connection)
+sensor_bluetooth = serial.Serial(
+    port='/dev/rfcomm0',
+    baudrate=9600,
+    timeout=1,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE
+)
 
 
-// helper function to get the value of a given column in the csv.
-char* get_csv_column(char* line, int num)
-{
-    char* tok;
-    for (tok = strtok(line, ",");
-            tok && *tok;
-            tok = strtok(NULL, ",\n"))
-    {
-        if (!--num)
-            return tok;
-    }
-    return NULL;
-}
+# Conversor setup
+busio_i2c = busio.I2C(board.SCL, board.SDA)
 
-// this function will read the input csv, parse it, and save the input values in the input matrix and the output values in the output array
-// the col_inputs param are the columns of interest in the csv and the col_output is the output column in the csv
-void load_csv(char* filename, int* col_inputs, int len_col_inputs, int num_csv_rows, float input[num_csv_rows - 1][len_col_inputs], float* output, int col_output) {
+ads_i2c = ADS.ADS1115(busio_i2c)
+ads_i2c.gain = 1
 
-    FILE* fp = fopen(filename, "r");
+sensor_pressao_freio = AnalogIn(ads_i2c, ADS.P0)
+#
 
-    if (!fp) {
-        printf("[ERROR] File does not exist. Aborting...\n");
-        exit(1);
-    }
-
-    // this will skip the first line (we need to ignore the column names) of the csv
-    fscanf(fp, "%*[^\n]\n");
-
-    char* line = NULL;
-    size_t len = 0;
-    size_t read;
-    int row = 0;
-
-    // for every line in the csv, handle input and output columns
-    while ((read = getline(&line, &len, fp)) != -1) {
-
-        // handle input columns
-        for (int i = 0; i < len_col_inputs; i++) {
-            char* tmp = strdup(line);
-            const char* col = get_csv_column(tmp, col_inputs[i]);
-            if (col) {
-                input[row][i] = atof(col);
-            }
-            free(tmp);
-        }
-
-        // handle output columns
-        char* tmp = strdup(line);
-        const char* col = get_csv_column(tmp, col_output);
-        if (col) {
-            output[row] = atof(col);
-        }
-
-        
-        free(tmp);
-        row++;
-    }
-
-    free(line);
-    fclose(fp);
-}
-
-/*
-w0, w1, w2
-3, 4, 5
-*/
-void save_csv(FILE* fp, float* weights, int len_weights) {
-    for (int i = 0; i < len_weights; i++) {
-        if (i == (len_weights - 1)) { // last iteration of the loop
-            fprintf(fp,"%f\n", weights[i]);
-            break;
-        }
-        fprintf(fp,"%f, ", weights[i]);
-    }
-} 
-
-float* nn_train(int len_rows, int len_columns, float input[len_rows][len_columns], float* output, float learning_rate, int epochs, char* output_file) {
-    
-    /*
-    the weights will always have the size of the input + 1. Like
-    input: {0, 1}
-    weights: {0, 0, 0}
-    since weights[0] is the bias
-    */
-    
-    // this is like using malloc and then memset 
-    int len_weights = len_columns + 1;
-
-    float* weight = calloc(sizeof(float), len_weights);
-
-    FILE* fp = fopen(output_file, "w+");
-
-    // this is just writing the column names in the output file, like 'w0, w1, w2, ..., wn'
-    for (int i = 0; i < len_weights; i++) {
-        if (i == (len_weights - 1)) { // last iteration of the loop
-            fprintf(fp,"w%d\n", i);
-            break;
-        }
-        fprintf(fp,"w%d, ", i);
-    }
-
-    for (int ep = 0; ep < epochs; ep++) {
-        for (int i = 0; i < len_rows; i++) {
-                update_weight(input[i], weight, learning_rate, output[i], len_weights, i);
-                save_csv(fp, weight, len_weights);
-        }
-    }
-
-    #ifdef VERBOSE
-        printf("[PERCEPTRON - INFO] Results for %s\n", output_file);
-        for (int i = 0; i < len_weights; i++) {
-            printf("weight[%d]: %f\n", i, weight[i]);
-        }
-        printf("\n");
-    #endif
-
-    fclose(fp);
-
-    return weight;
-}
-
-int main (int argc, char** argv) {
-    // float input[4][2] = {
-    //     {0.0, 0.0},
-    //     {0.0, 1.0},
-    //     {1.0, 0.0},
-    //     {1.0, 1.0}
-    // };
-    
-    // float output[4] = {-1.0, -1.0, -1.0, 1.0};
-    // float learning_rate = 1.0;
-    // int epochs = 15;
-    
-    // float* weights = nn_train(ARR_SIZE(input), ARR_SIZE(input[0]), input, output, learning_rate, 6, "weights.csv");
-    // int len_weights = ARR_SIZE(input[0]) + 1;
-    // for (int i = 0; i < len_weights; i++) {
-    //     printf("weight[%d]: %f\n", i, weights[i]);
-    // }
+# Conversor setup
 
 
-    if (argc != 4) {
-        printf("[ERROR] Invalid input. Should be: './perceptron <input_file> <output_file> <num_rows>. Aborting...\n");
-        exit(1);
-    }
+# Configuration to increase the frequency of the GPS Sensor.
+# Before every command, it's necessary to send this command.
+unlock = bytes.fromhex('FF AA 69 88 B5')
+# After every command, it's necessary to send this command.
+save = bytes.fromhex('FF AA 00 00 00')
+
+sensor_gps.write(unlock)
+time.sleep(0.1)
+
+rrate = bytes.fromhex('FF AA 03 0B 00')  # Setting the rate to 100Hz.
+sensor_gps.write(rrate)
+time.sleep(0.1)
+
+baud = bytes.fromhex('FF AA 04 06 00')  # Setting the baud rate to 115200.
+sensor_gps.write(baud)
+time.sleep(0.1)
+
+sensor_gps.write(save)
+time.sleep(0.1)
+
+# Flags and variables declarations.
+contador = 0
+interrupt_flag = True
+check_bug = True
+dados_package = {}
+contador_botao = 0
+flag_button_collection = False
+data_sensors = ""
+
+# Every time the button is pressed, this function is called.
+# It toggles the flag so that no more data is received until the button is pressed again.
 
 
-    int fields[] = {4, 5};
+def button_pressed_callback(channel):
+    global interrupt_flag, data_sensors, contador_botao, flag_button_collection
+    interrupt_flag = not interrupt_flag
+    print("Button pressed")
+    current_time = datetime.datetime.now()
+    print(current_time)
+    print(f"Contador: {contador}")
+    data_sensors = ""
 
-    // The fields will be appended in the 'fields.txt' file so that pos_processor.py can use it later
-    FILE* save_fp = fopen("fields.txt", "w+");
 
-    for (int i = 0; i < ARR_SIZE(fields); ++i) {
-        if (i == (ARR_SIZE(fields) - 1)) { // last iteration of the loop
-            fprintf(save_fp,"%d\n", fields[i]);
-            break;
-        }
-        fprintf(save_fp,"%d, ", fields[i]);
-    } 
+# Button setup
+BUTTON_GPIO = 26
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(BUTTON_GPIO, GPIO.FALLING,
+                      callback=button_pressed_callback, bouncetime=1000)
 
-    fclose(save_fp);
 
-    // this is the input matrix. The number of rows is minus 1 since there's the column names, so we need 
-    // to get rid of that. The columns will be the size of the fields of interest.
+# The tick_ms and calculate_elapse functions are auxiliary functions for the RPM and Speed calculations.
+def ticks_ms():
+    return int(time.time() * 1000)
 
-    // argv[3] is the total number of csv_rows passed as argument
-    const int CSV_ROWS = atoi(argv[3]);
 
-    float input[CSV_ROWS - 1][ARR_SIZE(fields)];
+def calculate_elapse(channel):
+    global pulse, start_timer, elapse
+    pulse += 1
+    elapse = ticks_ms() - start_timer
+    start_timer = ticks_ms()
 
-    float output[CSV_ROWS - 1];
 
-    load_csv(argv[1], fields, ARR_SIZE(fields), CSV_ROWS, input, output, 6);
-    float* weights = nn_train(ARR_SIZE(input), ARR_SIZE(input[0]), input, output, 1, 100, argv[2]);
+# These variables can be called with the calculate_speed functions. They will be updated in that function.
+dist_meas = 0.00
+km_per_hour = 0
+rpm = 0
+elapse = 0
+pulse = 0
+start_timer = ticks_ms()
 
-    return 0;
-}
+# Hall sensor, that is located on the wheel, setup.
+HALL_PIN = 21
+GPIO.setmode(GPIO.BCM)
+sensor = GPIO.setup(HALL_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(HALL_PIN, GPIO.FALLING, callback=calculate_elapse)
+
+# This functions changes the variables declared above. The parameter is the wheel radius, which was about 32 cm.
+
+
+def calculate_speed(r_cm):
+    global pulse, elapse, rpm, dist_km, dist_meas, km_per_hour
+    if elapse != 0:
+        rpm = 1 / (elapse / 60000)
+        circ_cm = 2 * math.pi * r_cm
+        dist_km = circ_cm / 100000
+        km_per_sec = dist_km / (elapse / 1000)
+        km_per_hour = km_per_sec * 3600
+        dist_meas = (dist_km * pulse) * 1000
+        return km_per_hour
+
+
+# This function was needed since sometimes the GPS Sensor wasn't sending data.
+# It basically restarts the data acquisition and the flag is controlled on the thread functions.
+def check_bug_timer():
+    global interrupt_flag, check_bug
+    if check_bug:
+        interrupt_flag = False
+        time.sleep(0.5)
+        interrupt_flag = True
+
+
+# Connect bluetooth
+
+###########
+bluetooth_buffer = "!{}@{}*{}".format(0.0, 0.0, 0.0)
+# bluetooth_lock = threading.Lock()
+#
+#
+# def bluetooth_thread():
+#     global bluetooth_buffer
+#     while True:
+#         try:
+#             bluetooth_data = sensor_bluetooth.readline()
+#             if bluetooth_data:
+#                 bluetooth_data = bluetooth_data.decode().rstrip().split(',')
+#                 bluetooth_buffer = "!{}@{}*{}".format(bluetooth_data[0].strip(
+#                 ), bluetooth_data[1].strip(), bluetooth_data[2].strip())
+#         except Exception as e:
+#             print("Deu excecao na thread bluetooth: ", e)
+#
+###########
+# This is the piece of code responsible for receiving the GPS Sensor data.
+
+###
+# Sensor de pressao
+
+
+pressao_buffer = ""
+
+
+def sensor_pressao_thread():
+    global pressao_buffer
+    while True:
+        try:
+            current_voltage = sensor_pressao_freio.voltage
+            # Calibrar os fatores com regressao linear
+            # pressao = current_voltage * A + B
+            pressao_buffer = ""
+            pressao_buffer = f"~{current_voltage:.4f}"
+        except Exception as e:
+            print("Deu excecao na thread bluetooth: ", e)
+
+# Sensor de pressao
+###
+
+
+raw_data_lock = threading.Lock()
+display_shared_buff = ()
+
+
+def gps_thread():
+    global run_core_1
+    global data_sensors
+    global cont
+    global check_bug
+
+    # First, read the sensor output. If it's "5551", it means that a new package containing data can be saved.
+    # The GPS Sensor can output information such as acceleration, angular speed, latitude/longitude and more. Check the datasheet for more.
+    # Every new sensor within the GPS Sensor starts its data with "55XX", where XX can be a number between 51 and 58, depending what's
+    # the output of the sensor, where acceleration is 51, angular speed is 52 and so on. This is why it's read and saved 86 bytes,
+    # because it contains the whole chunk of data captured by the sensor at that instant.
+    while interrupt_flag:
+        read_gps = sensor_gps.read(2)
+        if read_gps:
+            if binascii.hexlify(read_gps).decode('utf-8') == "5551":
+                check_bug = False
+                if not interrupt_flag:
+                    data_sensors = ""
+                    read_gps = ""
+                    break
+
+                data_worthy = "5551" + \
+                    binascii.hexlify(sensor_gps.read(86)).decode('utf-8')
+
+                data_sensors = ""
+                data_sensors += data_worthy
+
+    data_worthy = ""
+    data_sensors = ""
+
+
+# This is the piece of code responsible for receiving the angle data sent by the AS5600.
+def angle_thread():
+    global run_core_1
+    global data_sensors
+    global contador
+    global dados_package
+    global bluetooth_buffer
+    global display_shared_buff
+
+    angle_degrees = "111.11"
+
+    while interrupt_flag:
+        try:
+            # According to the datasheet, the raw angle is obtained by reading from two registers.
+            # The sensor has a 12-bit resolution.
+
+            # The register whose address is 0x0C contains the high byte (11:8)
+            high_byte = sensor_angulo.read_byte_data(0x36, 0x0C)
+
+            # The register whose address is 0x0D contains teh low byte (7:0)
+            low_byte = sensor_angulo.read_byte_data(0x36, 0x0D)
+
+            # Since it's a 12-bit sensor, it's first necessary to shift the high byte by 8 bits and sum it with the low byte.
+            # This will result in a 16 bit data, so it's perfomed a AND operation to get only the 12 bits.
+            # The value 0.08789 comes from dividing 360 by 4096 (2^12)
+            high_byte = high_byte << 8
+            raw_angle = high_byte + low_byte
+            angle_degrees = (raw_angle & 0xFFF) * 0.08789
+            angle_degrees = "{:.2f}".format(angle_degrees)
+
+        except OSError:
+            print(
+                "Modulo de estercamento com problemas... Salvando 111.11 como valor padrao")
+            angle_degrees = "111.11"
+
+        finally:
+            if len(data_sensors) == 176:
+
+                if not interrupt_flag:
+                    data_sensors = ""
+                    angle_degrees = ""
+                    break
+
+                data_sensors += (str(datetime.datetime.now())).split()[1]
+
+                data_sensors += angle_degrees
+
+                if len(data_sensors) > 20:
+                    calculate_speed(32)
+                    hall_data = "#{:.2f}${:.2f}".format(rpm, km_per_hour)
+                    data_sensors += hall_data
+                    data_sensors += bluetooth_buffer
+                    data_sensors += pressao_buffer
+                    arquivo.write(data_sensors + "\n")
+
+                    print("Dados: ", data_sensors)
+
+                    contador += 1
+
+                    with raw_data_lock:
+                        display_shared_buff = (
+                            data_sensors[132:154], km_per_hour)
+
+                data_sensors = ""
+
+    angle_degrees = ""
+    data_sensors = ""
+
+
+def show_data_display():
+    big_font = ImageFont.truetype(
+        "/usr/local/share/fonts/MononokiNerdFont-Bold.ttf", 22)
+    small_font = ImageFont.truetype(
+        "/usr/local/share/fonts/MononokiNerdFont-Bold.ttf", 15)
+    while True:
+        try:
+            sleep(0.1)
+            with canvas(display) as draw:
+                with raw_data_lock:
+                    velocidade_gps = display_shared_buff[0]
+                    velocidade_gps = handleSensor7(velocidade_gps)
+
+                    velocidade_hall = display_shared_buff[1]
+                    current_time = (
+                        str(datetime.datetime.now())).split()[1][:8]
+                    draw.text(
+                        (15, 0), "GPS", fill="green", font=small_font)
+                    draw.text(
+                        (0, 20), f"{velocidade_gps:.2f}", fill="green", font=big_font)
+                    draw.text(
+                        (82, 0), "HALL", fill="blue", font=small_font)
+                    draw.text(
+                        (70, 20), f"{velocidade_hall:.2f}", fill="blue", font=big_font)
+                    draw.text((28, 48), f"{current_time}",
+                              fill="blue", font=small_font)
+        except Exception as e:
+            print("Problemas com o display...")
+
+
+# This infinite loop is responsible for dealing with what happens after the button is pressed
+while True:
+    if interrupt_flag:
+        print("entrei na interrupcao")
+        data_sensors = ""
+
+        sensor_gps.flushInput()
+        sensor_gps.flushOutput()
+
+        try:
+            # The number.txt is the file responsible for keeping track of how what should the name of the file be when saving the data
+            read_number = open('number.txt', 'r')
+            last_number = int(read_number.read())
+            # The data is saved in dadosN.txt, where N is the number tracked by the number.txt file.
+            arquivo = open(f"dados{str(last_number + 1)}.txt", "a")
+            write_number = open('number.txt', 'w')
+            write_number.write(str(last_number + 1))
+            read_number.close()
+            write_number.close()
+        except Exception as e:
+            print("ERRO LINHA 29: ", e)
+            arquivo = open("dados0.txt", "a")
+            write_number = open('number.txt', 'a')
+            write_number.write('0')
+            write_number.close()
+            pass
+
+        # In the next lines the threads are started.
+
+        timer_thread = threading.Timer(1.5, check_bug_timer)
+        check_bug = True
+        timer_thread.start()
+
+        thread1 = threading.Thread(target=angle_thread)
+        thread1.start()
+        #########
+        # thread2 = threading.Thread(target=bluetooth_thread)
+        # thread2.start()
+        # #########
+        thread_display = threading.Thread(target=show_data_display)
+        thread_display.start()
+
+        thread_pressao = threading.Thread(target=sensor_pressao_thread)
+        thread_pressao.start()
+
+        gps_thread()
+
+        data_sensors = ""
+        print("apos as threads")
+
+        sensor_gps.flushInput()
+        sensor_gps.flushOutput()
+
+        arquivo.close()
