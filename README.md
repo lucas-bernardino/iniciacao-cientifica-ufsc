@@ -9,9 +9,9 @@
 
 [Como utilizar](#como-utilizar)
 
-![Screenshot1](/assets/screen1.jpeg)
+![Screenshot1](/assets/screen1.png)
 
-![Screensho2](/assets/screen2.jpeg)
+![Screensho2](/assets/screen2.png)
 
 
 ## Objetivos
