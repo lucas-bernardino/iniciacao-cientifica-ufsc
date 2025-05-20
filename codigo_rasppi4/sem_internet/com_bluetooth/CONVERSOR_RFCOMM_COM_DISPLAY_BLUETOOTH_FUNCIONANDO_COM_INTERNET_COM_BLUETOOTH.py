@@ -295,82 +295,89 @@ def angle_thread():
             angle_degrees = "111.11"
 
         finally:
-            if len(data_sensors) == 176:
+            try:
+                if len(data_sensors) == 176:
 
-                if not interrupt_flag:
+                    if not interrupt_flag:
+                        data_sensors = ""
+                        angle_degrees = ""
+                        break
+
+                    data_sensors += (str(datetime.datetime.now())).split()[1]
+
+                    data_sensors += angle_degrees
+
+                    if len(data_sensors) > 20:
+                        calculate_speed(32)
+                        hall_data = "#{:.2f}${:.2f}".format(rpm, km_per_hour)
+                        data_sensors += hall_data
+
+                        acel_x, acel_y, acel_z, temp = handleSensor1(
+                            data_sensors[0:22])
+                        vel_x, vel_y, vel_z = handleSensor2(
+                            data_sensors[22:44])
+                        roll, pitch, yaw = handleSensor3(data_sensors[44:66])
+                        mag_x, mag_y, mag_z = handleSensor4(
+                            data_sensors[66:88])
+                        air_press, altitude = handleSensor5(
+                            data_sensors[88:110])
+                        longitude, latitude = handleSensor6(
+                            data_sensors[110:132])
+                        velocidade_gps = handleSensor7(data_sensors[132:154])
+                        angle = data_sensors[176:]
+
+                        t1 = bluetooth_buffer[bluetooth_buffer.find(
+                            '!') + 1:bluetooth_buffer.find('@')]
+                        t2 = bluetooth_buffer[bluetooth_buffer.find(
+                            '@') + 1:bluetooth_buffer.find('*')]
+                        t3 = bluetooth_buffer[bluetooth_buffer.find(
+                            '*') + 1:]
+
+                        data_sensors += "!{}@{}*{}".format(t1, t2, t3)
+                        data_sensors += pressao_buffer
+                        arquivo.write(data_sensors + "\n")
+
+                        with lock_socket_emit:
+                            dados_package = {
+                                "id": contador,
+                                "acel_x": acel_x,
+                                "acel_y": acel_y,
+                                "acel_z": acel_z,
+                                "vel_x": vel_x,
+                                "vel_y": vel_y,
+                                "vel_z": vel_z,
+                                "roll": roll,
+                                "pitch": pitch,
+                                "yaw": yaw,
+                                "mag_x": mag_x,
+                                "mag_y": mag_y,
+                                "mag_z": mag_z,
+                                "temp": temp,
+                                "esterc": angle_degrees,
+                                "rot": "{:.2f}".format(rpm),
+                                "veloc": velocidade_gps,
+                                "long": longitude,
+                                "lat": latitude,
+                                "press_ar": "{:.2f}".format(km_per_hour),
+                                "altitude": altitude,
+                                "termopar1": float(t1) if "nan" not in t1 else 0.0,
+                                "termopar2": float(t2) if "nan" not in t2 else 0.0,
+                                "termopar3": float(t3) if "nan" not in t3 else 0.0,
+                                "Horario": (str(datetime.datetime.now())).split()[1]
+                            }
+
+                        print("Dados: ", data_sensors)
+
+                        contador += 1
+
+                        with raw_data_lock:
+                            display_shared_buff = (
+                                data_sensors[132:154], km_per_hour)
+
                     data_sensors = ""
-                    angle_degrees = ""
-                    break
 
-                data_sensors += (str(datetime.datetime.now())).split()[1]
-
-                data_sensors += angle_degrees
-
-                if len(data_sensors) > 20:
-                    calculate_speed(32)
-                    hall_data = "#{:.2f}${:.2f}".format(rpm, km_per_hour)
-                    data_sensors += hall_data
-
-                    acel_x, acel_y, acel_z, temp = handleSensor1(
-                        data_sensors[0:22])
-                    vel_x, vel_y, vel_z = handleSensor2(data_sensors[22:44])
-                    roll, pitch, yaw = handleSensor3(data_sensors[44:66])
-                    mag_x, mag_y, mag_z = handleSensor4(data_sensors[66:88])
-                    air_press, altitude = handleSensor5(data_sensors[88:110])
-                    longitude, latitude = handleSensor6(data_sensors[110:132])
-                    velocidade_gps = handleSensor7(data_sensors[132:154])
-                    angle = data_sensors[176:]
-
-                    t1 = bluetooth_buffer[bluetooth_buffer.find(
-                        '!') + 1:bluetooth_buffer.find('@')]
-                    t2 = bluetooth_buffer[bluetooth_buffer.find(
-                        '@') + 1:bluetooth_buffer.find('*')]
-                    t3 = bluetooth_buffer[bluetooth_buffer.find(
-                        '*') + 1:]
-
-                    data_sensors += "!{}@{}*{}".format(t1, t2, t3)
-                    data_sensors += pressao_buffer
-                    arquivo.write(data_sensors + "\n")
-
-                    with lock_socket_emit:
-                        dados_package = {
-                            "id": contador,
-                            "acel_x": acel_x,
-                            "acel_y": acel_y,
-                            "acel_z": acel_z,
-                            "vel_x": vel_x,
-                            "vel_y": vel_y,
-                            "vel_z": vel_z,
-                            "roll": roll,
-                            "pitch": pitch,
-                            "yaw": yaw,
-                            "mag_x": mag_x,
-                            "mag_y": mag_y,
-                            "mag_z": mag_z,
-                            "temp": temp,
-                            "esterc": angle_degrees,
-                            "rot": "{:.2f}".format(rpm),
-                            "veloc": velocidade_gps,
-                            "long": longitude,
-                            "lat": latitude,
-                            "press_ar": "{:.2f}".format(km_per_hour),
-                            "altitude": altitude,
-                            "termopar1": float(t1) if "nan" not in t1 else 0.0,
-                            "termopar2": float(t2) if "nan" not in t2 else 0.0,
-                            "termopar3": float(t3) if "nan" not in t3 else 0.0,
-                            "Horario": (str(datetime.datetime.now())).split()[1]
-                        }
-
-                    print("Dados: ", data_sensors)
-
-                    contador += 1
-
-                    with raw_data_lock:
-                        display_shared_buff = (
-                            data_sensors[132:154], km_per_hour)
-
-                data_sensors = ""
-
+            except Exception as e:
+                print("Problema ao salvar/enviar dado", e)
     angle_degrees = ""
     data_sensors = ""
 
