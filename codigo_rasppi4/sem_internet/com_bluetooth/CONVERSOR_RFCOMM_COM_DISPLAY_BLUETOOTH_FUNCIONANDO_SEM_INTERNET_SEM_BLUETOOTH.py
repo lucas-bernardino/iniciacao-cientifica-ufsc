@@ -30,13 +30,13 @@ sensor_gps = serial.Serial("/dev/serial0", 115200, timeout=1)
 sensor_angulo = SMBus(1)
 display_connection = i2c(port=1, address=0x3C)
 display = ssd1306(display_connection)
-sensor_bluetooth = serial.Serial(
-    port='/dev/rfcomm0',
-    baudrate=9600,
-    timeout=1,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE
-)
+# sensor_bluetooth = serial.Serial(
+#     port='/dev/rfcomm0',
+#     baudrate=9600,
+#     timeout=1,
+#     parity=serial.PARITY_NONE,
+#     stopbits=serial.STOPBITS_ONE
+# )
 
 
 # Conversor setup
@@ -73,7 +73,7 @@ time.sleep(0.1)
 
 # Flags and variables declarations.
 contador = 0
-interrupt_flag = True
+interrupt_flag = False
 check_bug = True
 dados_package = {}
 contador_botao = 0
@@ -140,11 +140,16 @@ def calculate_speed(r_cm):
         km_per_sec = dist_km / (elapse / 1000)
         km_per_hour = km_per_sec * 3600
         dist_meas = (dist_km * pulse) * 1000
-        return km_per_hour
 
+        if elapse > 950:  # Considering it zero so we can measure when the wheel locks
+            km_per_hour = 0.0
+            rpm = 0.0
+        return km_per_hour
 
 # This function was needed since sometimes the GPS Sensor wasn't sending data.
 # It basically restarts the data acquisition and the flag is controlled on the thread functions.
+
+
 def check_bug_timer():
     global interrupt_flag, check_bug
     if check_bug:
@@ -192,7 +197,7 @@ def sensor_pressao_thread():
             pressao_buffer = ""
             pressao_buffer = f"~{current_voltage:.4f}"
         except Exception as e:
-            print("Deu problema na thread sensor pressao: ", e)
+            print("Deu problema na thread sensor pressao", e)
             continue
 
 # Sensor de pressao
