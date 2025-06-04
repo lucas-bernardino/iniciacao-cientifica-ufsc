@@ -1,5 +1,6 @@
 import pandas as pd
 from handle_sensors_module import *
+import numpy as np
 
 number_of_files = open('number.txt', 'r').read()
 
@@ -72,6 +73,26 @@ for i in range(int(number_of_files) + 1):
                 print(f"Erro: {e}.\n\nPosicao: {contador} ")
 
         df = pd.DataFrame(data=list_of_dicts)
+
+        MAX = 120
+
+        # Vout = 0.05 x Pin+0.376
+        # Pin = (Vout - 0.376) / 0.05
+
+        brake_voltage = df["Pressao Freio"].to_numpy()
+        df["Pressao Freio"] = (brake_voltage - 0.376) / 0.05
+
+        n = [i for i in range(len(df["Pressao Freio"]))]
+
+        velocidade_raw = df["Velocidade: "].to_numpy() 
+
+        velocidade_masked = np.where(
+            velocidade_raw > MAX,
+            np.nan,
+            velocidade_raw
+        )
+
+        velocidade_interp = pd.Series(velocidade_masked).interpolate().fillna(method='bfill').fillna(method='ffill').to_numpy()
 
         df.to_csv(f"dados{i}.csv", index=False)
 
