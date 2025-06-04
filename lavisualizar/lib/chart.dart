@@ -627,7 +627,6 @@ Widget buildChartIndividual(
         double long = item[15] as double;
         double lat = item[16] as double;
         _dataPointsGps.add(DataPointsGPS(lat, long));
-        continue;
       }
       if (item[value_column].toDouble() > maxYAxis) {
         maxYAxis = item[value_column].toDouble();
@@ -707,7 +706,7 @@ Widget buildChartIndividual(
       SfCartesianChart(
         title: ChartTitle(
           text: value_column == 16
-              ? "longitude em função da latitude"
+              ? "Longitude x Latitude"
               : "${chartInfo[0].split(" ")[0].toLowerCase()} em função do tempo",
           textStyle: TextStyle(
             color: Colors.white,
@@ -720,7 +719,17 @@ Widget buildChartIndividual(
           enable: true,
           borderColor: Colors.deepOrange,
           borderWidth: 2,
-          header: "",
+          builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
+            String velGps = "${csvData[pointIndex][17].toString()}";
+            String velHall = "${csvData[pointIndex][21].toString()}";
+            String brakeVal = "${csvData[pointIndex][25].toString()}";
+            return Container(
+                child: Text(
+                    'Velocidade GPS: $velGps km/h\nVelocidade Hall: $velHall km/h\nPressão Freio: $brakeVal bar',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                )
+            );
+          }
         ),
         zoomPanBehavior: ZoomPanBehavior(
           enablePanning: true,
