@@ -722,10 +722,11 @@ Widget buildChartIndividual(
           builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
             String velGps = "${csvData[pointIndex][17].toString()}";
             String velHall = "${csvData[pointIndex][21].toString()}";
+            String tempTermopar = "${csvData[pointIndex][22].toString()}";
             String brakeVal = "${csvData[pointIndex][25].toString()}";
             return Container(
                 child: Text(
-                    'Velocidade GPS: $velGps km/h\nVelocidade Hall: $velHall km/h\nPressão Freio: $brakeVal bar',
+                    'Velocidade GPS: $velGps km/h\nVelocidade Hall: $velHall km/h\nPressão Freio: $brakeVal bar\nTemperatura Pastilha: $tempTermopar °C',
                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                 )
             );
