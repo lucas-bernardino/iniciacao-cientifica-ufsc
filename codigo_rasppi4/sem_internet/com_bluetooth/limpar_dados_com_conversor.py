@@ -79,12 +79,12 @@ for i in range(int(number_of_files) + 1):
         # Vout = 0.05 x Pin+0.376
         # Pin = (Vout - 0.376) / 0.05
 
-        brake_voltage = df["Pressao Freio"].to_numpy()
+        brake_voltage = df["Pressao Freio"].to_numpy().astype(float)
         df["Pressao Freio"] = (brake_voltage - 0.376) / 0.05
 
         n = [i for i in range(len(df["Pressao Freio"]))]
 
-        velocidade_raw = df["Velocidade: "].to_numpy() 
+        velocidade_raw = df["Velocidade: "].to_numpy().astype(float)
 
         velocidade_masked = np.where(
             velocidade_raw > MAX,
@@ -92,7 +92,8 @@ for i in range(int(number_of_files) + 1):
             velocidade_raw
         )
 
-        velocidade_interp = pd.Series(velocidade_masked).interpolate().fillna(method='bfill').fillna(method='ffill').to_numpy()
+        velocidade_interp = pd.Series(velocidade_masked).interpolate().fillna(
+            method='bfill').fillna(method='ffill').to_numpy()
 
         df.to_csv(f"dados{i}.csv", index=False)
 
