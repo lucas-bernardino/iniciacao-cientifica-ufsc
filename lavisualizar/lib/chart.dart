@@ -566,12 +566,15 @@ Widget buildChartIndividual(
 
   double maxYAxis = csvData[1][value_column].toDouble();
   double minYAxis = csvData[1][value_column].toDouble();
+
   int csvLength = 0;
   double totalSum = 0;
 
   List<String> chartInfo = getInfoCard(value_column);
 
   bool isPerformance = chartQuality.contains("Performance");
+
+  List<DataPoints> _dataPoints2 = [];
 
   for (var item in csvData.skip(1)) {
     try {
@@ -595,6 +598,9 @@ Widget buildChartIndividual(
       _dataPoints.add(DataPoints(dateTime, item[value_column]));
       totalSum += item[value_column].toDouble();
       csvLength += 1;
+      if (value_column == 17) {
+        _dataPoints2.add(DataPoints(dateTime, item[21])); // Add vel. hall
+      }
     } catch (e) {
       print("DEU ERRO: ${e}");
     }
@@ -604,19 +610,32 @@ Widget buildChartIndividual(
   double avgValue = totalSum / csvLength;
 
   List<DataPoints> _dataPointsFiltered = [];
+  List<DataPoints> _dataPointsFiltered2 = [];
+  double maxYAxis2 = 0.0;
+  double minYAxis2 = 0.0;
+  double avgValue2 = 0.0;
   if (value_column != 16) {
     var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints, chartGroupChoice);
     _dataPointsFiltered = ret[0] as List<DataPoints>;
     maxYAxis = ret[1] as double;
     minYAxis = ret[2] as double;
     avgValue = ret[3] as double;
+
+    if (value_column == 17) {
+      var ret = getFilteredValues(sliderFilterParam.round(), _dataPoints2, chartGroupChoice);
+      _dataPointsFiltered2 = ret[0] as List<DataPoints>;
+      maxYAxis2 = ret[1] as double;
+      minYAxis2 = ret[2] as double;
+      avgValue2 = ret[3] as double;
+    }
+
   }
 
   return Column(
     children: [
       value_column == 16
           ? SizedBox()
-          : Padding(
+          : (value_column != 17 ? Padding(
         padding: const EdgeInsets.only(left: 40.0),
         child: Card(
           elevation: 20,
@@ -654,6 +673,86 @@ Widget buildChartIndividual(
             ),
           ),
         ),
+      ) : Padding(
+        padding: const EdgeInsets.only(left: 40.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Card(
+              elevation: 20,
+              color: Colors.orange[500],
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Column(
+                      children: [
+                        Text(chartInfo[0]),
+                        Text(
+                            "${maxYAxis.toStringAsFixed(2)} ${chartInfo[3]}"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo[1]),
+                        Text("${avgValue.toStringAsFixed(2)} ${chartInfo[3]}")
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text(chartInfo[2]),
+                        Text("${minYAxis.toStringAsFixed(2)} ${chartInfo[3]}")
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              elevation: 20,
+              color: Colors.blue[500],
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Column(
+                      children: [
+                        Text("VELOCIDADE HALL MAXIMA"),
+                        Text(
+                            "${maxYAxis2.toStringAsFixed(2)} km/h"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text("VELOCIDADE HALL MEDIA"),
+                        Text("${avgValue2.toStringAsFixed(2)} km/h")
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Column(
+                      children: [
+                        Text("VELOCIDADE HALL MINIMA"),
+                        Text("${minYAxis2.toStringAsFixed(2)} km/h")
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+      )
       ),
       SfCartesianChart(
         title: ChartTitle(
@@ -723,7 +822,7 @@ Widget buildChartIndividual(
           maximum: value_column != 16 ? (maxYAxis + 1) : null,
         ),
         series: value_column != 16
-            ? <FastLineSeries<DataPoints, DateTime>>[
+            ? (value_column != 17 ? <FastLineSeries<DataPoints, DateTime>>[
           // Initialize line series with data points
           FastLineSeries<DataPoints, DateTime>(
             color: Colors.orange[500],
@@ -731,7 +830,21 @@ Widget buildChartIndividual(
             xValueMapper: (DataPoints value, _) => value.x,
             yValueMapper: (DataPoints value, _) => value.y,
           ),
-        ]
+        ] : <FastLineSeries<DataPoints, DateTime>>[
+          // Initialize line series with data points
+          FastLineSeries<DataPoints, DateTime>(
+            color: Colors.orange[500],
+            dataSource: _dataPointsFiltered,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+          FastLineSeries<DataPoints, DateTime>(
+            color: Colors.blue[500],
+            dataSource: _dataPointsFiltered2,
+            xValueMapper: (DataPoints value, _) => value.x,
+            yValueMapper: (DataPoints value, _) => value.y,
+          ),
+        ])
             : <ChartSeries<DataPointsGPS, double>>[
           // Initialize line series with data points
           LineSeries<DataPointsGPS, double>(
