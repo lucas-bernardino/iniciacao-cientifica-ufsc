@@ -164,7 +164,7 @@ def check_bug_timer():
 
 
 ###########
-thermocouple_buffer = "!{}@{}*{}".format(0.0, 0.0, 0.0)
+thermocouple_buffer = "!{}@".format(0.0)
 
 
 def thermocouple_thread():
@@ -173,7 +173,7 @@ def thermocouple_thread():
         try:
             temp = thermocouple.get()
             if temp:
-                thermocouple_buffer = "!{}@{}*{}".format(temp, 0.0, 0.0)
+                thermocouple_buffer = "!{}@".format(temp)
             time.sleep(0.3)
         except Exception as e:
             print("Deu excecao na thread termopar: ", e)
