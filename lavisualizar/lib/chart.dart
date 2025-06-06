@@ -46,8 +46,7 @@ List<List<String>> CARD_INFO_GROUP = [
   ["ESTERÇAMENTO MÁXIMO", "ESTERÇAMENTO MÉDIO", "ESTERÇAMENTO MÍNIMO", "deg"],
   ["LATITUDE", "LONGITUDE", "", ""],
   ["TEMPERATURA T1 MÁXIMO", "TEMPERATURA T1 MÉDIO", "TEMPERATURA T1 MÍNIMO", "°C"],
-  ["TEMPERATURA T2 MÁXIMO", "TEMPERATURA T2 MÉDIO", "TEMPERATURA T2 MÍNIMO", "°C"],
-  ["TEMPERATURA T3 MÁXIMO", "TEMPERATURA T3 MÉDIO", "TEMPERATURA T3 MÍNIMO", "°C"],
+  ["PRESSAO FREIO MÁXIMO", "PRESSAO FREIO MÉDIO", "PRESSAO FREIO MÍNIMO", "BAR"],
 ];
 
 List<List<String>> CARD_INFO_INDIVIDUAL = [
@@ -99,7 +98,8 @@ class _ChartState extends State<Chart> {
     false,
     false,
     false,
-    false
+    false,
+    false,
   ];
 
 
@@ -513,6 +513,25 @@ class _ChartState extends State<Chart> {
                       child: SizedBox(
                           width: 125,
                           child: Text("Temp. Pastilha", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          chartColumnOption = 23;
+                          isButtonPressedGroup = isButtonPressedGroup
+                              .map(
+                                (e) => false,
+                          )
+                              .toList();
+                          isButtonPressedGroup[10] = true;
+                        });
+                      },
+                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[10] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                      child: SizedBox(
+                          width: 125,
+                          child: Text("Pressão Freio", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   SizedBox(
                     height: 10,
                   ),
