@@ -34,12 +34,15 @@ enum COLUMNS {
 List<List<String>> CARD_INFO_GROUP = [
   ["ACELERAÇÃO MÁXIMA", "ACELERAÇÃO MÉDIA", "ACELERACAO MÍNIMA", "m/s²"],
   ["VELOCIDADE MÁXIMA", "VELOCIDADE MÉDIA", "VELOCIDADE MÍNIMO", "km/h"],
-  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "rad"],
-  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "rad"],
-  ["YALL MÁXIMO", "YALL MÉDIO", "YALL MÍNIMO", "rad"],
+  ["ROLL MÁXIMO", "ROLL MÉDIO", "ROLL MÍNIMO", "graus"],
+  ["PITCH MÁXIMO", "PITCH MÉDIO", "PITCH MÍNIMO", "graus"],
+  ["YAW MÁXIMO", "YAW MÉDIO", "YAW MÍNIMO", "graus"],
   ["ESTERÇAMENTO MÁXIMO", "ESTERÇAMENTO MÉDIO", "ESTERÇAMENTO MÍNIMO", "deg"],
-  ["LATITUDE", "LONGITUDE", "", ""]
+  ["LATITUDE", "LONGITUDE", "", ""],
+  ["TEMPERATURA T1 MÁXIMO", "TEMPERATURA T1 MÉDIO", "TEMPERATURA T1 MÍNIMO", "°C"],
+  ["PRESSAO FREIO MÁXIMO", "PRESSAO FREIO MÉDIO", "PRESSAO FREIO MÍNIMO", "BAR"],
 ];
+
 
 List<List<String>> CARD_INFO_INDIVIDUAL = [
   ["ACELERAÇÃO X MÁXIMA", "ACELERAÇÃO X MÉDIA", "ACELERACAO X MÍNIMA", "m/s²"],
@@ -76,7 +79,11 @@ class _ComparisonState extends State<Comparison> {
     false,
     false,
     false,
-    false
+    false,
+    false,
+    false,
+    false,
+    false,
   ];
 
   @override
@@ -320,6 +327,44 @@ class _ComparisonState extends State<Comparison> {
                         child: SizedBox(
                             width: 125,
                             child: Text("Esterçamento", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            chartColumnOption = 22;
+                            isButtonPressedGroup = isButtonPressedGroup
+                                .map(
+                                  (e) => false,
+                            )
+                                .toList();
+                            isButtonPressedGroup[9] = true;
+                          });
+                        },
+                        style: ButtonStyle(backgroundColor: isButtonPressedGroup[9] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                        child: SizedBox(
+                            width: 125,
+                            child: Text("Temp. Pastilha", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            chartColumnOption = 23;
+                            isButtonPressedGroup = isButtonPressedGroup
+                                .map(
+                                  (e) => false,
+                            )
+                                .toList();
+                            isButtonPressedGroup[10] = true;
+                          });
+                        },
+                        style: ButtonStyle(backgroundColor: isButtonPressedGroup[10] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
+                        child: SizedBox(
+                            width: 125,
+                            child: Text("Pressão Freio", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                     IconButton(
                       onPressed: () => setState(() {
                         _shouldDisplayOptions = false;
@@ -533,10 +578,17 @@ List<String> getInfoCard(int value_column) {
       return CARD_INFO_GROUP[5];
     case 16:
       return CARD_INFO_GROUP[6];
+    case 22:
+      return CARD_INFO_GROUP[7];
+    case 23:
+      return CARD_INFO_GROUP[8];
+    case 24:
+      return CARD_INFO_GROUP[9];
   }
 
   return [""];
 }
+
 
 class DataPoints {
   DataPoints(this.x, this.y);
