@@ -30,9 +30,7 @@ for i in range(int(number_of_files) + 1):
                     horario = data[176:191]
                     rpm = data[data.find('#') + 1:data.find('$')]
                     vel = data[data.find('$') + 1:data.find('!')]
-                    ble_t1 = data[data.find('!') + 1:data.find('@')]
-                    ble_t2 = data[data.find('@') + 1:data.find('*')]
-                    ble_t3 = data[data.find('*') + 1:data.find('~')]
+                    brake_temp = data[data.find('!') + 1:data.find('@')]
                     pressao_freio = data[data.find('~') + 1:]
 
                     if angle[0] == 'A':
@@ -61,10 +59,8 @@ for i in range(int(number_of_files) + 1):
                         "Angulo": angle,
                         "Horario": horario,
                         "RPM": rpm,
-                        "Velocidade: ": vel,
-                        "Bluetooth Temperatura 1": ble_t1,
-                        "Bluetooth Temperatura 2": ble_t2,
-                        "Bluetooth Temperatura 3": ble_t3,
+                        "Velocidade Hall": vel,
+                        "Temperatura Disco": brake_temp,
                         "Pressao Freio": pressao_freio
                     }
                     list_of_dicts.append(dict_data)
@@ -79,12 +75,13 @@ for i in range(int(number_of_files) + 1):
         # Vout = 0.05 x Pin+0.376
         # Pin = (Vout - 0.376) / 0.05
 
+        df = df.iloc[20:]
         brake_voltage = df["Pressao Freio"].to_numpy().astype(float)
         df["Pressao Freio"] = (brake_voltage - 0.376) / 0.05
 
         n = [i for i in range(len(df["Pressao Freio"]))]
 
-        velocidade_raw = df["Velocidade: "].to_numpy().astype(float)
+        velocidade_raw = df["Velocidade Hall"].to_numpy().astype(float)
 
         velocidade_masked = np.where(
             velocidade_raw > MAX,
