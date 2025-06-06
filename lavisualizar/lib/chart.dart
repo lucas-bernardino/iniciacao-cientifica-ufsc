@@ -305,22 +305,6 @@ class _ChartState extends State<Chart> {
                           width: 285,
                           child: Text("Velocidade X | Velocidade Y | Velocidade Z", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
                   ),
-                  ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          isButtonPressedIndividual = isButtonPressedIndividual
-                              .map(
-                                (e) => false,
-                          )
-                              .toList();
-                          isButtonPressedIndividual[3] = true;
-                        });
-                      },
-                      style: ButtonStyle(backgroundColor: isButtonPressedIndividual[3] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: SizedBox(
-                          width: 285,
-                          child: Text("Termopar 1 | Termopar 2 | Termopar 3", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))
-                  ),
                   SizedBox(
                     height: 10,
                   ),
@@ -528,45 +512,13 @@ class _ChartState extends State<Chart> {
                       style: ButtonStyle(backgroundColor: isButtonPressedGroup[9] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
                       child: SizedBox(
                           width: 125,
-                          child: Text("Termopar 1", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
+                          child: Text("Temp. Pastilha", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   SizedBox(
                     height: 10,
                   ),
-                  ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          chartColumnOption = 23;
-                          isButtonPressedGroup = isButtonPressedGroup
-                              .map(
-                                (e) => false,
-                          )
-                              .toList();
-                          isButtonPressedGroup[10] = true;
-                        });
-                      },
-                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[10] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: SizedBox(
-                          width: 125,
-                          child: Text("Termopar 2", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   SizedBox(
                     height: 10,
                   ),
-                  ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          chartColumnOption = 24;
-                          isButtonPressedGroup = isButtonPressedGroup
-                              .map(
-                                (e) => false,
-                          )
-                              .toList();
-                          isButtonPressedGroup[11] = true;
-                        });
-                      },
-                      style: ButtonStyle(backgroundColor: isButtonPressedGroup[11] ? WidgetStateProperty.all(Colors.black38) : WidgetStateProperty.all(Colors.grey[900])),
-                      child: SizedBox(
-                          width: 125,
-                          child: Text("Termopar 3", style: TextStyle(color: Colors.white), textAlign: TextAlign.center,))),
                   IconButton(
                     onPressed: () => setState(() {
                       _shouldDisplayFutureBuilderSingularFile = true;
