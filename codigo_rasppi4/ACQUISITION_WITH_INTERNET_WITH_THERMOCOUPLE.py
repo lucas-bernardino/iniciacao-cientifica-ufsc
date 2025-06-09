@@ -338,6 +338,9 @@ def angle_thread():
                         t1 = thermocouple_buffer[thermocouple_buffer.find(
                             '!') + 1:thermocouple_buffer.find('@')]
 
+                        # (brake_voltage - 0.376) / 0.05
+                        brake_pressure = (
+                            float(pressao_buffer.replace("~", "")) - 0.376) / 0.05
                         with lock_socket_emit:
                             dados_package = {
                                 "id": contador,
@@ -363,10 +366,11 @@ def angle_thread():
                                 "press_ar": air_press,
                                 "altitude": altitude,
                                 "termopar1": float(t1) if "nan" not in t1 else 0.0,
+                                "brake_pressure": brake_pressure,
                                 "Horario": (str(datetime.datetime.now())).split()[1]
                             }
 
-                        print("Dados: ", data_sensors)
+                            print("Dados: ", dados_package)
 
                         contador += 1
 
