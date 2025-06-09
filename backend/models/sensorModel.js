@@ -125,6 +125,11 @@ const sensorSchema = mongoose.Schema(
       required: false,
       default: -99,
     },
+    brake_pressure: {
+      type: Number,
+      required: false,
+      default: -99,
+    },
     Horario: {
       type: String,
       required: false,
