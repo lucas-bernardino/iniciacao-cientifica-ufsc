@@ -95,7 +95,11 @@ const sensorSchema = mongoose.Schema(
       required: true,
       default: -99,
     },
-
+    veloc_hall: {
+      type: Number,
+      required: true,
+      default: -99,
+    },
     long: {
       type: Number,
       required: true,
@@ -106,7 +110,6 @@ const sensorSchema = mongoose.Schema(
       required: true,
       default: -99,
     },
-
     press_ar: {
       type: Number,
       required: true,
@@ -118,16 +121,6 @@ const sensorSchema = mongoose.Schema(
       default: -99,
     },
     termopar1: {
-      type: Number,
-      required: false,
-      default: -99,
-    },
-    termopar2: {
-      type: Number,
-      required: false,
-      default: -99,
-    },
-    termopar3: {
       type: Number,
       required: false,
       default: -99,
