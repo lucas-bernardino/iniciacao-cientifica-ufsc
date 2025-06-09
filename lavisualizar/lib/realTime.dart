@@ -47,10 +47,12 @@ class _RealTimeState extends State<RealTime> {
   List<bool> toggleButtonsAccel = [false, false, false];
   List<bool> toggleButtonsVel = [false, false, false];
   List<bool> toggleButtonsAxis = [false, false, false];
+  List<bool> toggleButtonVelHall = [false, false];
   List<bool> toggleButtonsTemp = [false, false, false];
 
   List<bool> toggleButtonOneDimensionalVel = [true, false];
   List<bool> toggleButtonOneDimensionalEsterc = [true, false];
+  List<bool> toggleButtonOneDimensionalTemp = [true, false];
   List<bool> toggleButtonGPS = [true, false];
 
   bool timerSocketFlag = false;
@@ -269,16 +271,14 @@ class _RealTimeState extends State<RealTime> {
                 Container(
                     width: 480,
                     height: 380,
-                    child: buildOneDimensionalCard(
-                        "VELOCIDADE GPS",
-                        "veloc",
-                        {
-                          "title": "Velocidade GPS",
-                          "value": "${bikeInfo["veloc"].toStringAsFixed(2)} º"
-                        },
+                    child: buildVelGPSAndHallCard(
+                        "Velocidade",
+                        "vel",
+                        {"title": "Velocidade GPS", "value": "${bikeInfo["veloc"].toStringAsFixed(2)} km/h"},
+                        {"title": "Velocidade Hall", "value": "${bikeInfo["veloc_hall"]} km/h"},
                         chartDataAndController,
-                        toggleButtonOneDimensionalVel,
-                        setState)),
+                        setState,
+                        toggleButtonVelHall)),
                 Container(
                     width: 480,
                     height: 380,
@@ -290,7 +290,7 @@ class _RealTimeState extends State<RealTime> {
                           "value": "${bikeInfo["termopar1"].toStringAsFixed(2)} º"
                         },
                         chartDataAndController,
-                        toggleButtonOneDimensionalVel,
+                        toggleButtonOneDimensionalTemp,
                         setState)),
                 /* Container(
                   width: 480,
@@ -666,6 +666,173 @@ Widget buildOneDimensionalChart(
   );
 }
 
+Widget buildVelGPSAndHallCard(
+    String cardTitle,
+    String mapVal,
+    Map<String, String> dataVel,
+    Map<String, String> dataHall,
+    MapChartController _chartController,
+    Function setStateCallback,
+    List<bool> _toggleButtonsAccel) {
+  return Card(
+    color: Colors.black45,
+    elevation: 10,
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          SizedBox(
+            child: Text(
+              cardTitle,
+              style:
+              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    dataVel["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    dataVel["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    dataHall["title"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    dataHall["value"] ?? "",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          buildVelGPSAndHallChart(cardTitle, mapVal, _chartController,
+              _toggleButtonsAccel, setStateCallback),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildVelGPSAndHallChart(
+    String title,
+    String mapVal,
+    MapChartController _chartController,
+    List<bool> _toggleButtonsAccel,
+    Function setStateCallback) {
+  List<LineSeries<CartesianChartPoint, DateTime>> series = [];
+
+  List<Color> chartColors = [
+    Colors.yellow[500]!,
+    Colors.greenAccent,
+  ];
+
+  var currentNameVec = ["veloc", "veloc_hall"];
+
+  for (int i = 0; i < 2; i++) {
+    String dataName = currentNameVec[i];
+    Color dataColor = chartColors[i];
+
+    if (_toggleButtonsAccel[i] == true) {
+      series.add(
+        LineSeries<CartesianChartPoint, DateTime>(
+          onRendererCreated: (ChartSeriesController controller) {
+            _chartController[dataName]?["controller"] = controller;
+          },
+          color: dataColor,
+          dataSource: _chartController[dataName]?["chartData"],
+          xValueMapper: (CartesianChartPoint point, _) => point.date,
+          yValueMapper: (CartesianChartPoint point, _) => point.value,
+          enableTooltip: true,
+        ),
+      );
+    } else {
+      _chartController[dataName]?["controller"] = null;
+    }
+  }
+
+  return Container(
+    width: double.infinity,
+    height: 250,
+    child: Column(
+      children: [
+        Container(
+          height: 200,
+          child: SfCartesianChart(
+              title: ChartTitle(
+                textStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 5,
+                ),
+              ),
+              enableAxisAnimation: true,
+              tooltipBehavior: TooltipBehavior(
+                color: Colors.deepOrange,
+                enable: true,
+                borderColor: Colors.deepOrange,
+                header: "",
+              ),
+              zoomPanBehavior: ZoomPanBehavior(
+                enablePanning: true,
+                enableMouseWheelZooming: true,
+                enablePinching: true,
+              ),
+              primaryXAxis: DateTimeAxis(
+                  majorGridLines: MajorGridLines(width: 0),
+                  labelStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 4,
+                      fontWeight: FontWeight.w500),
+                  title: AxisTitle(
+                      text: "Tempo",
+                      textStyle: TextStyle(color: Colors.white))),
+              primaryYAxis: NumericAxis(
+                majorGridLines: MajorGridLines(width: 0),
+                labelStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 4,
+                  fontWeight: FontWeight.w500,
+                ),
+                title: AxisTitle(
+                    text: "$mapVal", textStyle: TextStyle(color: Colors.white)),
+              ),
+              series: series),
+        ),
+        ToggleButtons(
+          isSelected: _toggleButtonsAccel,
+          onPressed: (int index) {
+            setStateCallback(() {
+              _toggleButtonsAccel[index] = !_toggleButtonsAccel[index];
+            });
+          },
+          children: <Widget>[
+            Icon(MdiIcons.alphaG),
+            Icon(MdiIcons.alphaH),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 Widget buildGPSCard(MapChartController _chartController,
     List<bool> _toggleButtons, Function setStateCallback) {
   return Card(
@@ -875,9 +1042,8 @@ Map<String, dynamic> initMap() {
     "long": 0,
     "lat": 0,
     "veloc": 0,
+    "veloc_hall": 0,
     "termopar1": 0,
-    "termopar2": 0,
-    "termopar3": 0
   };
   return newMap;
 }
@@ -925,6 +1091,10 @@ MapChartController initMapChartController() {
       "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
     "veloc": {
+      "controller": null,
+      "chartData": List<CartesianChartPoint>.empty(growable: true)
+    },
+    "veloc_hall": {
       "controller": null,
       "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
