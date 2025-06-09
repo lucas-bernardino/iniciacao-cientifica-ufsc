@@ -282,15 +282,16 @@ class _RealTimeState extends State<RealTime> {
                 Container(
                     width: 480,
                     height: 380,
-                    child: buildXYZCard(
+                    child: buildOneDimensionalCard(
                         "TEMPERATURA",
-                        "temp",
-                        {"title": "Termopar 1", "value": "${bikeInfo["termopar1"].toStringAsFixed(2)} º"},
-                        {"title": "Termopar 2", "value": "${bikeInfo["termopar2"].toStringAsFixed(2)} º"},
-                        {"title": "Termopar 3", "value": "${bikeInfo["termopar3"].toStringAsFixed(2)} º"},
+                        "termopar1",
+                        {
+                          "title": "Tmperatura Pastilha",
+                          "value": "${bikeInfo["termopar1"].toStringAsFixed(2)} º"
+                        },
                         chartDataAndController,
-                        setState,
-                        toggleButtonsTemp)),
+                        toggleButtonOneDimensionalVel,
+                        setState)),
                 /* Container(
                   width: 480,
                   height: 380,
@@ -932,14 +933,6 @@ MapChartController initMapChartController() {
       "chartData": List<GPSChartPoint>.empty(growable: true)
     },
     "termopar1": {
-      "controller": null,
-      "chartData": List<CartesianChartPoint>.empty(growable: true)
-    },
-    "termopar2": {
-      "controller": null,
-      "chartData": List<CartesianChartPoint>.empty(growable: true)
-    },
-    "termopar3": {
       "controller": null,
       "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
