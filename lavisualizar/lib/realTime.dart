@@ -53,6 +53,7 @@ class _RealTimeState extends State<RealTime> {
   List<bool> toggleButtonOneDimensionalVel = [true, false];
   List<bool> toggleButtonOneDimensionalEsterc = [true, false];
   List<bool> toggleButtonOneDimensionalTemp = [true, false];
+  List<bool> toggleButtonOneDimensionalBrake = [true, false];
   List<bool> toggleButtonGPS = [true, false];
 
   bool timerSocketFlag = false;
@@ -292,26 +293,19 @@ class _RealTimeState extends State<RealTime> {
                         chartDataAndController,
                         toggleButtonOneDimensionalTemp,
                         setState)),
-                /* Container(
-                  width: 480,
-                  height: 380,
-                  child: buildOneDimensionalCard(
-                      "ESTERÇAMENTO DO GUIDÃO",
-                      "esterc",
-                      {
-                        "title": "ESTERÇAMENTO",
-                        "value": "${bikeInfo["esterc"]} º"
-                      },
-                      chartDataAndController,
-                      toggleButtonOneDimensionalEsterc,
-                      setState),
-                ), */
                 Container(
                   width: 480,
                   height: 380,
-                  child: buildGPSCard(
-                      chartDataAndController, toggleButtonGPS, setState),
-                )
+                  child: buildOneDimensionalCard(
+                      "PRESSÃO DO FREIO",
+                      "brake_pressure",
+                      {
+                        "title": "Pressão do freio roda traseira",
+                        "value": "${bikeInfo["brake_pressure"].toStringAsFixed(2)} bar"
+                      },
+                      chartDataAndController,
+                      toggleButtonOneDimensionalBrake,
+                      setState)),
               ],
             )
           ],
@@ -1044,6 +1038,7 @@ Map<String, dynamic> initMap() {
     "veloc": 0,
     "veloc_hall": 0,
     "termopar1": 0,
+    "brake_pressure": 0
   };
   return newMap;
 }
@@ -1103,6 +1098,10 @@ MapChartController initMapChartController() {
       "chartData": List<GPSChartPoint>.empty(growable: true)
     },
     "termopar1": {
+      "controller": null,
+      "chartData": List<CartesianChartPoint>.empty(growable: true)
+    },
+    "brake_pressure": {
       "controller": null,
       "chartData": List<CartesianChartPoint>.empty(growable: true)
     },
