@@ -157,7 +157,15 @@ GPIO.add_event_detect(HALL_PIN, GPIO.FALLING, callback=calculate_elapse)
 
 
 def calculate_speed(r_cm):
-    global pulse, elapse, rpm, dist_km, dist_meas, km_per_hour
+    global pulse, elapse, rpm, dist_km, dist_meas, km_per_hour, start_timer
+
+    time_since_last_pulse = ticks_ms() - start_timer
+
+    if time_since_last_pulse > 950:
+        km_per_hour = 0.0
+        rpm = 0.0
+        return km_per_hour
+
     if elapse != 0:
         rpm = 1 / (elapse / 60000)
         circ_cm = 2 * math.pi * r_cm
@@ -166,14 +174,11 @@ def calculate_speed(r_cm):
         km_per_hour = km_per_sec * 3600
         dist_meas = (dist_km * pulse) * 1000
 
-        if elapse > 950:  # Considering it zero so we can measure when the wheel locks
-            km_per_hour = 0.0
-            rpm = 0.0
-        return km_per_hour
-
-
+    return km_per_hour
 # This function was needed since sometimes the GPS Sensor wasn't sending data.
 # It basically restarts the data acquisition and the flag is controlled on the thread functions.
+
+
 def check_bug_timer():
     global interrupt_flag, check_bug
     if check_bug:
@@ -182,9 +187,8 @@ def check_bug_timer():
         interrupt_flag = True
 
 
-
 ###########
-thermocouple_buffer = "!{}@{}*{}".format(0.0, 0.0, 0.0)
+thermocouple_buffer = "!{}@".format(0.0)
 
 
 def thermocouple_thread():
@@ -193,7 +197,7 @@ def thermocouple_thread():
         try:
             temp = thermocouple.get()
             if temp:
-                thermocouple_buffer = "!{}@{}*{}".format(temp, 0.0, 0.0)
+                thermocouple_buffer = "!{}@".format(temp)
             time.sleep(0.3)
         except Exception as e:
             print("Deu excecao na thread termopar: ", e)
@@ -331,7 +335,8 @@ def angle_thread():
                         data_sensors += pressao_buffer
                         arquivo.write(data_sensors + "\n")
 
-                        t1 = thermocouple_buffer[thermocouple_buffer.find('!') + 1:thermocouple_buffer.find('@')]
+                        t1 = thermocouple_buffer[thermocouple_buffer.find(
+                            '!') + 1:thermocouple_buffer.find('@')]
 
                         with lock_socket_emit:
                             dados_package = {
@@ -352,13 +357,12 @@ def angle_thread():
                                 "esterc": angle_degrees,
                                 "rot": "{:.2f}".format(rpm),
                                 "veloc": velocidade_gps,
+                                "veloc_hall": "{:.2f}".format(km_per_hour),
                                 "long": longitude,
                                 "lat": latitude,
-                                "press_ar": "{:.2f}".format(km_per_hour),
+                                "press_ar": air_press,
                                 "altitude": altitude,
                                 "termopar1": float(t1) if "nan" not in t1 else 0.0,
-                                "termopar2": 0.0,
-                                "termopar3": 0.0,
                                 "Horario": (str(datetime.datetime.now())).split()[1]
                             }
 
