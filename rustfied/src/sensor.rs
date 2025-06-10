@@ -83,12 +83,14 @@ impl BikeSensor {
             });
 
             let time: DateTime<Local> = Local::now();
+            let microsecond = time.nanosecond() / 1000;
+
             let time_str = format!(
-                "{}:{}:{:02}.{}",
+                "{}:{}:{:02}.{:06}",
                 time.hour(),
                 time.minute(),
                 time.second(),
-                time.nanosecond().to_string()[..6].parse::<u32>().unwrap()
+                microsecond
             );
 
             hall.calculate_speed();

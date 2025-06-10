@@ -228,7 +228,9 @@ async fn file_task(
     loop {
         if *is_capturing_data.lock().unwrap() {
             notification.notified().await; // wait for notification from sensors
-            bike_sensor.lock().unwrap().write_file().unwrap();
+            if let Err(e) = bike_sensor.lock().unwrap().write_file() {
+                println!("Error saving to file: {}", e);
+            }
         }
     }
 }
