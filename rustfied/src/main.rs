@@ -5,7 +5,7 @@ use std::{
 };
 
 use rppal::gpio::{Event, Gpio, Trigger};
-use rustfied::sensor::{BikeSensor, BluetoothSensor, I2CSensor, UartSensor};
+use rustfied::sensor::{BikeSensor, BluetoothSensor, BrakePressureSensor, I2CSensor, UartSensor};
 
 use tokio::sync::Notify;
 
@@ -28,24 +28,26 @@ async fn main() {
     let mut button_pin = Gpio::new().unwrap().get(26).unwrap().into_input_pullup();
     let mut hall_pin = Gpio::new().unwrap().get(21).unwrap().into_input_pullup();
 
-    let sensor = Arc::new(BikeSensor::new("rust_raw_data.txt"));
+    let sensor = Arc::new(Mutex::new(BikeSensor::new()));
     let notify = Arc::new(Notify::new());
 
     let file_sensor_clone = Arc::clone(&sensor);
     let network_clone = Arc::clone(&sensor);
     let display_sensor_clone = Arc::clone(&sensor);
+    let button_interrupt_sensor_clone = Arc::clone(&sensor);
 
-    let uart_sensor = Arc::clone(&sensor.uart);
-    let i2c_sensor = Arc::clone(&sensor.i2c);
-    let bluetooth_sensor = Arc::clone(&sensor.bluetooth);
+    let uart_sensor = Arc::clone(&sensor.lock().unwrap().uart);
+    let i2c_sensor = Arc::clone(&sensor.lock().unwrap().i2c);
+    let bluetooth_sensor = Arc::clone(&sensor.lock().unwrap().bluetooth);
+    let brake_pressure_sensor = Arc::clone(&sensor.lock().unwrap().brake_pressure);
 
     let uart_notify = Arc::clone(&notify);
     let i2c_notify = Arc::clone(&notify);
     let notify_clone = Arc::clone(&notify);
 
-    let sensor_speed_clone_interrupt = Arc::clone(&sensor.hall);
+    let sensor_speed_clone_interrupt = Arc::clone(&sensor.lock().unwrap().hall);
 
-    let is_capturing_data = Arc::new(Mutex::new(false));
+    let is_capturing_data = Arc::new(Mutex::new(true));
     let is_capturing_data_file_clone = Arc::clone(&is_capturing_data);
     let is_capturing_data_network_clone = Arc::clone(&is_capturing_data);
 
@@ -53,12 +55,19 @@ async fn main() {
         dbg!("Button pressed!");
         let mut guard = is_capturing_data.lock().unwrap();
         *guard = !(*guard); // toggle is_capturing_data
+
+        button_interrupt_sensor_clone
+            .lock()
+            .unwrap()
+            .update_file()
+            .unwrap();
     };
 
+    println!("Interrupt callback set");
     button_pin
         .set_async_interrupt(
             Trigger::FallingEdge,
-            Some(Duration::from_millis(50)),
+            Some(Duration::from_millis(500)),
             button_interrupt_callback,
         )
         .expect("Failed to set interrupt");
@@ -92,6 +101,10 @@ async fn main() {
         bluetooth_sensor_task(bluetooth_sensor).await;
     });
 
+    let brake_pressure_handler = tokio::spawn(async move {
+        brake_pressure_sensor_task(brake_pressure_sensor).await;
+    });
+
     let display_handler = tokio::spawn(async move {
         display_task(display_sensor_clone).await;
     });
@@ -100,6 +113,7 @@ async fn main() {
         file_handler,
         network_handler,
         bluetooth_handler,
+        brake_pressure_handler,
         display_handler,
     );
 }
@@ -156,11 +170,21 @@ async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
             let mut bluetooth_lock = bluetooth_sensor.lock().unwrap();
             bluetooth_lock.update();
         }
-        tokio::time::sleep(Duration::from_millis(200)).await;
+        tokio::time::sleep(Duration::from_millis(250)).await;
     }
 }
 
-async fn display_task(bike_sensor: Arc<BikeSensor>) {
+async fn brake_pressure_sensor_task(brake_pressure_sensor: Arc<Mutex<BrakePressureSensor>>) {
+    loop {
+        {
+            let mut brake_pressure_lock = brake_pressure_sensor.lock().unwrap();
+            brake_pressure_lock.update();
+        }
+        tokio::time::sleep(Duration::from_millis(1)).await;
+    }
+}
+
+async fn display_task(bike_sensor: Arc<Mutex<BikeSensor>>) {
     let mut disp = init_ssd1306_display();
 
     let text_style = MonoTextStyleBuilder::new()
@@ -173,7 +197,7 @@ async fn display_task(bike_sensor: Arc<BikeSensor>) {
     loop {
         {
             disp.clear(BinaryColor::Off).unwrap();
-            let display_data = bike_sensor.get_display_data().unwrap();
+            let display_data = bike_sensor.lock().unwrap().get_display_data().unwrap();
             let text1 = format!("GPS");
             let text2 = format!("{:.2}", display_data[0]);
             let text3 = format!("HALL");
@@ -197,20 +221,20 @@ async fn display_task(bike_sensor: Arc<BikeSensor>) {
 }
 
 async fn file_task(
-    bike_sensor: Arc<BikeSensor>,
+    bike_sensor: Arc<Mutex<BikeSensor>>,
     notification: Arc<Notify>,
     is_capturing_data: Arc<Mutex<bool>>,
 ) {
     loop {
         if *is_capturing_data.lock().unwrap() {
             notification.notified().await; // wait for notification from sensors
-            bike_sensor.write_file().unwrap();
+            bike_sensor.lock().unwrap().write_file().unwrap();
         }
     }
 }
 
 async fn network_task(
-    bike_sensor: Arc<BikeSensor>,
+    bike_sensor: Arc<Mutex<BikeSensor>>,
     notification: Arc<Notify>,
     is_capturing_data: Arc<Mutex<bool>>,
 ) {
@@ -242,7 +266,11 @@ async fn network_task(
         if *is_capturing_data.lock().unwrap() {
             notification.notified().await;
             interval.tick().await;
-            let sensor_json = bike_sensor.get_json().expect("Failed to parse to json");
+            let sensor_json = bike_sensor
+                .lock()
+                .unwrap()
+                .get_json()
+                .expect("Failed to parse to json");
 
             if let Err(e) = socket.emit("send", sensor_json).await {
                 println!("Error while trying to send socket: {}", e);

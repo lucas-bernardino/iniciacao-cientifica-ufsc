@@ -6,21 +6,25 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use ads1x1x::ic::{Ads1115, Resolution16Bit};
+use ads1x1x::{Ads1x1x, TargetAddr};
 use chrono::prelude::*;
+use linux_embedded_hal::I2cdev;
 use serde_json::json;
 
 use i2cdev::core::*;
 use i2cdev::linux::LinuxI2CDevice;
 
-use crate::utils::{clean_accel, clean_angle, clean_vel, clean_gps_vel};
+use crate::utils::{clean_accel, clean_angle, clean_gps_vel, clean_vel};
 
-use bluetooth_serial_port::{BtAddr, BtProtocol, BtSocket};
+use rppal::gpio::Gpio;
 
 pub struct BikeSensor {
     pub uart: Arc<Mutex<UartSensor>>,
     pub i2c: Arc<Mutex<I2CSensor>>,
     pub bluetooth: Arc<Mutex<BluetoothSensor>>,
     pub hall: Arc<Mutex<HallSensor>>,
+    pub brake_pressure: Arc<Mutex<BrakePressureSensor>>,
     pub file: Arc<Mutex<std::fs::File>>,
 
     pub counter: Arc<Mutex<i32>>,
@@ -38,12 +42,16 @@ impl fmt::Display for BikeSensor {
 }
 
 impl BikeSensor {
-    pub fn new(file_name: &str) -> BikeSensor {
+    pub fn new() -> BikeSensor {
+        let time: DateTime<Local> = Local::now();
+        let file_name = format!("{}-{}-{}.txt", time.hour(), time.minute(), time.second(),);
+
         BikeSensor {
             uart: Arc::new(Mutex::new(UartSensor::new())),
             i2c: Arc::new(Mutex::new(I2CSensor::new())),
             bluetooth: Arc::new(Mutex::new(BluetoothSensor::new())),
             hall: Arc::new(Mutex::new(HallSensor::new())),
+            brake_pressure: Arc::new(Mutex::new(BrakePressureSensor::new())),
             file: Arc::new(Mutex::new(
                 std::fs::File::create(file_name)
                     .expect("Failed to create file with path the given path"),
@@ -52,11 +60,21 @@ impl BikeSensor {
         }
     }
 
+    pub fn update_file(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
+        let time: DateTime<Local> = Local::now();
+        let file_name = format!("{}-{}-{}.txt", time.hour(), time.minute(), time.second(),);
+
+        self.file = Arc::new(Mutex::new(std::fs::File::create(file_name)?));
+
+        Ok(())
+    }
+
     pub fn write_file(&self) -> Result<(), Box<dyn std::error::Error + '_>> {
         let mut uart = self.uart.lock()?;
         let mut i2c = self.i2c.lock()?;
         let bluetooth = self.bluetooth.lock()?;
         let mut hall = self.hall.lock()?;
+        let brake_press = self.brake_pressure.lock()?;
 
         if uart.is_ready && i2c.is_ready {
             let uart_str = uart.buffer.iter().fold(String::new(), |mut output, b| {
@@ -65,7 +83,13 @@ impl BikeSensor {
             });
 
             let time: DateTime<Local> = Local::now();
-            let time_str = format!("{}:{}:{}1111111", time.hour(), time.minute(), time.second(),);
+            let time_str = format!(
+                "{}:{}:{:02}.{}",
+                time.hour(),
+                time.minute(),
+                time.second(),
+                time.nanosecond().to_string()[..6].parse::<u32>().unwrap()
+            );
 
             hall.calculate_speed();
 
@@ -76,15 +100,14 @@ impl BikeSensor {
             }
             self.file.lock()?.write_all(
                 format!(
-                    "{}{}{}#{:.2}${:.2}!{}@{}*{}\n",
+                    "{}{}{}#{:.2}${:.2}!{:.2}@~{}\n",
                     uart_str,
                     time_str,
                     i2c.steer,
                     hall_speed,
                     hall_rpm,
                     bluetooth.termocouple1,
-                    bluetooth.termocouple2,
-                    bluetooth.termocouple3
+                    brake_press.brake_pressure
                 )
                 .as_bytes(),
             )?;
@@ -106,7 +129,6 @@ impl BikeSensor {
         //'18:25:52.843023'
         let time: DateTime<Local> = Local::now();
         let time_str = format!("{}:{}:{}", time.hour(), time.minute(), time.second(),);
-
 
         hall.calculate_speed();
         let hall_speed = hall.km_per_hour;
@@ -138,15 +160,12 @@ impl BikeSensor {
             "press_ar": format!("{:.2}", hall_speed),
             "altitude": 0.0,
             "termopar1": bluetooth.termocouple1,
-            "termopar2": bluetooth.termocouple2,
-            "termopar3": bluetooth.termocouple3,
             "Horario" : time_str
         });
 
         *counter += 1;
         Ok(json)
     }
-
 
     pub fn get_display_data(&self) -> Result<[f32; 2], Box<dyn std::error::Error + '_>> {
         let uart = self.uart.lock()?;
@@ -262,49 +281,57 @@ impl I2CSensor {
 
 pub struct BluetoothSensor {
     //bluetooth_conn: BtSocket,
+    cs_pin: rppal::gpio::OutputPin,
+    clk_pin: rppal::gpio::OutputPin,
+    data_pin: rppal::gpio::InputPin,
     pub termocouple1: f32,
-    pub termocouple2: f32,
-    pub termocouple3: f32,
 }
 
 impl BluetoothSensor {
     pub fn new() -> BluetoothSensor {
-        /*let mut bluetooth_conn = BtSocket::new(BtProtocol::RFCOMM).unwrap();
-        bluetooth_conn
-            .connect(BtAddr::from_str("98:DA:50:02:E3:9E").unwrap())
-            .unwrap();*/
+        let mut cs_pin = Gpio::new().unwrap().get(27).unwrap().into_output();
+        let clk_pin = Gpio::new().unwrap().get(17).unwrap().into_output();
+        let data_pin = Gpio::new().unwrap().get(22).unwrap().into_input();
+
+        cs_pin.set_high();
 
         BluetoothSensor {
-            //bluetooth_conn,
+            cs_pin,
+            clk_pin,
+            data_pin,
+
             termocouple1: 0.0,
-            termocouple2: 0.0,
-            termocouple3: 0.0,
         }
     }
 
-    pub fn update(&mut self) {
-        std::thread::sleep(std::time::Duration::from_millis(250));
-        /*let mut buffer = [0; 50];
-        let _ = self.bluetooth_conn.read(&mut buffer[..]).unwrap();
-        let buffer_str = String::from_utf8(buffer.into()).unwrap();
-        let vec_temps: Vec<_> = buffer_str
-            .split(",")
-            .take(3)
-            .map(|item| item.trim())
-            .collect();
+    fn read_max6675(&mut self) -> f32 {
+        self.cs_pin.set_low();
 
-        self.termocouple1 = vec_temps[0].parse::<f32>().unwrap_or(0.0);
-        if self.termocouple1.is_nan() {
-            self.termocouple1 = 0.0
-        };
-        self.termocouple2 = vec_temps[1].parse::<f32>().unwrap_or(0.0);
-        if self.termocouple2.is_nan() {
-            self.termocouple2 = 0.0
-        };
-        self.termocouple3 = vec_temps[2].parse::<f32>().unwrap_or(0.0);
-        if self.termocouple3.is_nan() {
-            self.termocouple3 = 0.0
-        }*/
+        let mut bytesin: u16 = 0;
+        for i in 0..16 {
+            self.clk_pin.set_low();
+            std::thread::sleep(std::time::Duration::from_micros(100));
+
+            bytesin <<= 1;
+            let bit = self.data_pin.is_high();
+            if bit {
+                bytesin |= 1;
+            }
+
+            self.clk_pin.set_high();
+            std::thread::sleep(std::time::Duration::from_micros(100));
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        self.cs_pin.set_high();
+
+        let data_16 = (bytesin >> 3) & 0xFFF;
+        let temp = (data_16 as f32) * 0.25;
+        temp as f32
+    }
+
+    pub fn update(&mut self) {
+        self.termocouple1 = self.read_max6675();
     }
 }
 
@@ -339,6 +366,34 @@ impl HallSensor {
             let dist_km = circ_cm / 100000.0;
             let km_per_sec = dist_km / (self.elapse.as_millis() as f32 / 1000.0);
             self.km_per_hour = km_per_sec * 3600.0;
+        }
+    }
+}
+
+pub struct BrakePressureSensor {
+    pub adc: Ads1x1x<I2cdev, Ads1115, Resolution16Bit, ads1x1x::mode::OneShot>,
+    pub brake_pressure: f32,
+}
+
+impl BrakePressureSensor {
+    pub fn new() -> Self {
+        let i2c_dev = I2cdev::new("/dev/i2c-1").unwrap();
+        let mut adc = Ads1x1x::new_ads1115(i2c_dev, TargetAddr::default());
+        adc.set_full_scale_range(ads1x1x::FullScaleRange::Within4_096V)
+            .unwrap();
+
+        Self {
+            adc,
+            brake_pressure: 0.0,
+        }
+    }
+
+    pub fn update(&mut self) {
+        let reading = self.adc.read(ads1x1x::channel::SingleA0);
+        if reading.is_ok() {
+            let voltage_val =
+                (reading.unwrap() as f32) * 4.096 / ((i32::pow(2, 16 - 1) - 1) as f32);
+            self.brake_pressure = voltage_val;
         }
     }
 }
