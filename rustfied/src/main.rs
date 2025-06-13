@@ -22,6 +22,8 @@ use embedded_graphics::{
 
 use rustfied::utils::init_ssd1306_display;
 const SERVER_URL: &str = "http://localhost:3001";
+const PORT_NAME: &str = "/dev/serial0";
+const BAUD_RATE: u32 = 115200;
 
 #[tokio::main]
 async fn main() {
@@ -63,7 +65,6 @@ async fn main() {
             .unwrap();
     };
 
-    println!("Interrupt callback set");
     button_pin
         .set_async_interrupt(
             Trigger::FallingEdge,
@@ -119,33 +120,43 @@ async fn main() {
 }
 
 fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notify>) {
-    let port_name = "/dev/serial0";
-    let baud_rate = 115200;
-
-    let port = serialport::new(port_name, baud_rate)
+    let port = serialport::new(PORT_NAME, BAUD_RATE)
         .timeout(Duration::from_secs(10))
         .open();
+
+    let mut data_buf = vec![0; 86];
+    data_buf.insert(0, 0x55);
+    data_buf.insert(1, 0x51);
 
     match port {
         Ok(mut port) => {
             let mut buff_check: Vec<u8> = vec![0; 2];
             loop {
-                port.read_exact(&mut buff_check)
-                    .expect(" --- IMPROVE ERROR HANDLING --- ");
-                // println!("Buff check: {:02x?}", buff_check);
-                if buff_check.starts_with(&[0x55, 0x51]) {
-                    let mut uart_lock = uart_sensor.lock().unwrap();
-                    port.read_exact(&mut uart_lock.buffer[2..])
-                        .expect(" --- IMPROVE ERROR HANDLING --- ");
-                    // println!("Buff: {:02x?}", uart_lock.buffer);
-                    uart_lock.update().expect("Failed to update uart"); // Still need to improve error handling
-                    uart_lock.is_ready = true;
-                    notification.notify_waiters();
+                if let Ok(_) = port.read_exact(&mut buff_check) {
+                    // println!("Buff check: {:02x?}", buff_check);
+                    if buff_check.starts_with(&[0x55, 0x51]) {
+                        if let Ok(_) = port.read_exact(&mut data_buf[2..]) {
+                            // println!("Buff: {:02x?}", data_buf);
+                            if let Ok(mut uart_lock) = uart_sensor.lock() {
+                                uart_lock.buffer.copy_from_slice(data_buf.as_slice());
+                                if let Ok(_) = uart_lock.update() {
+                                    uart_lock.is_ready = true;
+                                    notification.notify_waiters();
+                                } else {
+                                    println!("[ERROR] Failed to update uart struct")
+                                }
+                            } else {
+                                println!("[ERROR] Failed to get uart_lock")
+                            }
+                        } else {
+                            println!("[ERROR] Failed to read uart sensor data")
+                        }
+                    }
                 }
             }
         }
         Err(e) => {
-            eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
+            eprintln!("Failed to open \"{}\". Error: {}", PORT_NAME, e);
             ::std::process::exit(1);
         }
     }
