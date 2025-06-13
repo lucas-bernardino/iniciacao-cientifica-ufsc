@@ -24,6 +24,7 @@ use rustfied::utils::init_ssd1306_display;
 const SERVER_URL: &str = "http://localhost:3001";
 const PORT_NAME: &str = "/dev/serial0";
 const BAUD_RATE: u32 = 115200;
+const SEND_DATA_ONLINE_INTERVAL: u64 = 250; // 250 ms
 
 #[tokio::main]
 async fn main() {
@@ -139,17 +140,19 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
                             // println!("Buff: {:02x?}", data_buf);
                             if let Ok(mut uart_lock) = uart_sensor.lock() {
                                 uart_lock.buffer.copy_from_slice(data_buf.as_slice());
-                                if let Ok(_) = uart_lock.update() {
-                                    uart_lock.is_ready = true;
-                                    notification.notify_waiters();
-                                } else {
-                                    println!("[ERROR] Failed to update uart struct")
+                                if let Err(e) = uart_lock.update() {
+                                    println!(
+                                        "uart_sensor_task: [ERROR] Failed to update uart struct: {}",
+                                        e
+                                    )
                                 }
+                                uart_lock.is_ready = true;
+                                notification.notify_waiters();
                             } else {
-                                println!("[ERROR] Failed to get uart_lock")
+                                println!("uart_sensor_task: [ERROR] Failed to get uart_lock")
                             }
                         } else {
-                            println!("[ERROR] Failed to read uart sensor data")
+                            println!("uart_sensor_task: [ERROR] Failed to read uart sensor data")
                         }
                     }
                 }
@@ -165,11 +168,21 @@ fn uart_sensor_task(uart_sensor: Arc<Mutex<UartSensor>>, notification: Arc<Notif
 fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>) {
     loop {
         {
-            let mut i2c_lock = i2c_sensor.lock().unwrap();
-
-            i2c_lock.update().expect("Failed to update i2c"); // Still need to improve error handling
-            i2c_lock.is_ready = true;
-            notification.notify_waiters();
+            match i2c_sensor.lock() {
+                Ok(mut i2c_lock) => {
+                    if let Err(e) = i2c_lock.update() {
+                        println!(
+                            "i2c_sensor_task: [ERROR] Failed to update i2c struct: {}",
+                            e
+                        )
+                    }
+                    i2c_lock.is_ready = true;
+                    notification.notify_waiters();
+                }
+                Err(e) => {
+                    println!("i2c_sensor_task: [ERROR] Failed to get i2c lock: {e}")
+                }
+            }
         }
         std::thread::sleep(Duration::from_millis(1));
     }
@@ -178,8 +191,14 @@ fn i2c_sensor_task(i2c_sensor: Arc<Mutex<I2CSensor>>, notification: Arc<Notify>)
 async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
     loop {
         {
-            let mut bluetooth_lock = bluetooth_sensor.lock().unwrap();
-            bluetooth_lock.update();
+            match bluetooth_sensor.lock() {
+                Ok(mut bluetooth_lock) => {
+                    bluetooth_lock.update();
+                }
+                Err(e) => {
+                    println!("bluetooth_sensor_task: [ERROR] Failed to get bluetooth lock: {e}")
+                }
+            }
         }
         tokio::time::sleep(Duration::from_millis(250)).await;
     }
@@ -188,8 +207,16 @@ async fn bluetooth_sensor_task(bluetooth_sensor: Arc<Mutex<BluetoothSensor>>) {
 async fn brake_pressure_sensor_task(brake_pressure_sensor: Arc<Mutex<BrakePressureSensor>>) {
     loop {
         {
-            let mut brake_pressure_lock = brake_pressure_sensor.lock().unwrap();
-            brake_pressure_lock.update();
+            match brake_pressure_sensor.lock() {
+                Ok(mut brake_pressure_lock) => {
+                    brake_pressure_lock.update();
+                }
+                Err(e) => {
+                    println!(
+                        "brake_pressure_sensor_task: [ERROR] Failed to get brake_pressure_lock lock: {e}"
+                    )
+                }
+            }
         }
         tokio::time::sleep(Duration::from_millis(1)).await;
     }
@@ -203,31 +230,59 @@ async fn display_task(bike_sensor: Arc<Mutex<BikeSensor>>) {
         .text_color(BinaryColor::On)
         .build();
 
-    disp.flush().unwrap();
+    disp.flush()
+        .expect("display_task: [ERROR] Failed to flush display before loop");
 
     loop {
         {
-            disp.clear(BinaryColor::Off).unwrap();
-            let display_data = bike_sensor.lock().unwrap().get_display_data().unwrap();
-            let text1 = format!("GPS");
-            let text2 = format!("{:.2}", display_data[0]);
-            let text3 = format!("HALL");
-            let text4 = format!("{:.2}", display_data[1]);
-            Text::with_baseline(&text1, Point::new(15, 0), text_style, Baseline::Top)
-                .draw(&mut disp)
-                .unwrap();
-            Text::with_baseline(&text2, Point::new(0, 20), text_style, Baseline::Top)
-                .draw(&mut disp)
-                .unwrap();
-            Text::with_baseline(&text3, Point::new(82, 0), text_style, Baseline::Top)
-                .draw(&mut disp)
-                .unwrap();
-            Text::with_baseline(&text4, Point::new(70, 20), text_style, Baseline::Top)
-                .draw(&mut disp)
-                .unwrap();
+            let _ = disp.clear(BinaryColor::Off);
+            match bike_sensor.lock() {
+                Ok(bike_sensor_lock) => match bike_sensor_lock.get_display_data() {
+                    Ok(display_data) => {
+                        let text1 = format!("GPS");
+                        let text2 = format!("{:.2}", display_data[0]);
+                        let text3 = format!("HALL");
+                        let text4 = format!("{:.2}", display_data[1]);
+                        let _ = Text::with_baseline(
+                            &text1,
+                            Point::new(15, 0),
+                            text_style,
+                            Baseline::Top,
+                        )
+                        .draw(&mut disp);
+                        let _ = Text::with_baseline(
+                            &text2,
+                            Point::new(0, 20),
+                            text_style,
+                            Baseline::Top,
+                        )
+                        .draw(&mut disp);
+                        let _ = Text::with_baseline(
+                            &text3,
+                            Point::new(82, 0),
+                            text_style,
+                            Baseline::Top,
+                        )
+                        .draw(&mut disp);
+                        let _ = Text::with_baseline(
+                            &text4,
+                            Point::new(70, 20),
+                            text_style,
+                            Baseline::Top,
+                        )
+                        .draw(&mut disp);
+                    }
+                    Err(e) => {
+                        println!("display_task: [ERROR] Failed to get display_data: {e}")
+                    }
+                },
+                Err(e) => {
+                    println!("display_task: [ERROR] Failed to get bike_sensor lock: {e}")
+                }
+            }
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
-        disp.flush().unwrap();
+        let _ = disp.flush();
     }
 }
 
@@ -237,10 +292,28 @@ async fn file_task(
     is_capturing_data: Arc<Mutex<bool>>,
 ) {
     loop {
-        if *is_capturing_data.lock().unwrap() {
-            notification.notified().await; // wait for notification from sensors
-            if let Err(e) = bike_sensor.lock().unwrap().write_file() {
-                println!("Error saving to file: {}", e);
+        let should_capture = match is_capturing_data.lock() {
+            Ok(guard) => *guard,
+            Err(e) => {
+                println!(
+                    "file_task: [ERROR] Failed to get is_capturing_data lock: {}",
+                    e
+                );
+                false
+            }
+        };
+
+        if should_capture {
+            notification.notified().await;
+            match bike_sensor.lock() {
+                Ok(bike_sensor_lock) => {
+                    if let Err(e) = bike_sensor_lock.write_file() {
+                        eprintln!("Error saving to file: {}", e);
+                    }
+                }
+                Err(e) => {
+                    println!("file_task: [ERROR] Failed to lock bike_sensor: {}", e);
+                }
             }
         }
     }
@@ -251,7 +324,7 @@ async fn network_task(
     notification: Arc<Notify>,
     is_capturing_data: Arc<Mutex<bool>>,
 ) {
-    let duration = Duration::from_millis(250); // Send data aprox. every 250ms
+    let duration = Duration::from_millis(SEND_DATA_ONLINE_INTERVAL);
     let mut interval = tokio::time::interval(duration);
 
     let init_json = json!({
@@ -263,7 +336,7 @@ async fn network_task(
             .namespace("/")
             .connect()
             .await
-            .expect("Connection failed")
+            .expect("network_task: [ERROR] Socket connection failed: {}")
     };
 
     let mut socket = create_socket().await;
@@ -273,10 +346,21 @@ async fn network_task(
         .json(&init_json)
         .send()
         .await
-        .expect("Failed to hit /button_pressed route");
+        .expect("network_task: [ERROR] Socket connection failed: {}");
 
     loop {
-        if *is_capturing_data.lock().unwrap() {
+        let should_capture = match is_capturing_data.lock() {
+            Ok(guard) => *guard,
+            Err(e) => {
+                println!(
+                    "network_task: [ERROR] Failed to get is_capturing_data lock: {}",
+                    e
+                );
+                false
+            }
+        };
+
+        if should_capture {
             notification.notified().await;
             interval.tick().await;
             let sensor_json = bike_sensor
